@@ -160,7 +160,7 @@ export function UbuntuApp(){
 
  const notify=(message:string,kind:Notice["kind"]="success")=>{setNotice({message,kind})};
  const audit=(action:string,description:string)=>({id:keyId(),createdAt:new Date().toISOString(),
-  action,description,operatorId:activeOperator?.id});
+  action,description,...(activeOperator?{operatorId:activeOperator.id}:{})});
  const navigate=(next:Section,approved=false)=>{
   if(!activeOperator)return;
   if(!approved&&!roleCanSection(activeOperator.role,next)){
@@ -299,7 +299,7 @@ export function UbuntuApp(){
   if(payment==="dinheiro"&&!activeCashSession(data)){notify("Abra o caixa antes de receber uma venda em dinheiro.","error");return;}
   if(payment==="dinheiro"&&!cashTender.valid){notify(cashTender.reason??"Verifique o valor recebido.","error");return;}
   if(cart.some(c=>!data.products.some(p=>p.id===c.productId&&p.active&&!data.pharmaLots.some(l=>l.productId===p.id)&&p.stock-reservedQty(data,p.id)>=c.qty))){notify("O stock mudou. Reveja as quantidades.","error");return;}
-  const sale:Sale={operatorId:activeOperator?.id,id:"VD-"+Date.now().toString(36).toUpperCase()+"-"+keyId().slice(0,6).toUpperCase(),createdAt:new Date().toISOString(),items:snapshotSaleItems(data,cart.map(i=>({...i}))),total:cartTotal,method:payment,...(payment==="dinheiro"?{cashReceived:cashTender.received,cashChange:cashTender.change}:{}),...(customerId?{customerId,...(payment==="fiado"&&creditDueDate?{dueDate:creditDueDate}:{})}:{}),...(payment==="dinheiro"&&activeCashSession(data)?{cashSessionId:activeCashSession(data)!.id}:{})};
+  const sale:Sale={...(activeOperator?{operatorId:activeOperator.id}:{}),id:"VD-"+Date.now().toString(36).toUpperCase()+"-"+keyId().slice(0,6).toUpperCase(),createdAt:new Date().toISOString(),items:snapshotSaleItems(data,cart.map(i=>({...i}))),total:cartTotal,method:payment,...(payment==="dinheiro"?{cashReceived:cashTender.received,cashChange:cashTender.change}:{}),...(customerId?{customerId,...(payment==="fiado"&&creditDueDate?{dueDate:creditDueDate}:{})}:{}),...(payment==="dinheiro"&&activeCashSession(data)?{cashSessionId:activeCashSession(data)!.id}:{})};
   setData(old=>awardLoyaltyForSale({...old,sales:[sale,...old.sales],stockMovements:[...saleStockMovements(old,sale),...old.stockMovements],products:old.products.map(p=>{const item=cart.find(i=>i.productId===p.id);return item?{...p,stock:p.stock-item.qty}:p}),customers:old.customers.map(c=>c.id===customerId&&payment==="fiado"?{...c,debt:roundMoney(c.debt+cartTotal)}:c),credits:payment==="fiado"?[...old.credits,{id:keyId(),customerId,kind:"fiado" as const,amount:cartTotal,createdAt:sale.createdAt,saleId:sale.id,...(creditDueDate?{dueDate:creditDueDate}:{})}]:old.credits,audits:[audit(payment==="fiado"?"Venda a fiado":"Venda simulada",sale.id+" · "+money(sale.total)+" · "+paymentText[payment]),...old.audits]},sale));
   setCart([]);setCustomerId("");setCreditDueDate("");setPayment("dinheiro");setCashEntry("");setReceipt(sale);setReceiptFresh(true);setModal("receipt");notify("Venda registada na demonstração.");
  }

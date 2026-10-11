@@ -46,15 +46,18 @@ export function safeOperators(value:unknown):Operator[]{
  const valid:Operator[]=value.filter((entry):entry is Operator=>{
   if(!entry||typeof entry!=="object")return false;
   const x=entry as Record<string,unknown>;
-  return typeof x.id==="string"&&x.id.length>0&&x.id.length<=90
-   &&typeof x.name==="string"&&x.name.length>0&&x.name.length<=90
-   &&ALL_ROLES.includes(x.role as OperatorRole)&&typeof x.active==="boolean"
-   &&typeof x.createdAt==="string";
- }).map(x=>({...x,
-  updatedAt:typeof x.updatedAt==="string"?x.updatedAt:x.createdAt,
-  pinSalt:typeof x.pinSalt==="string"&&/^[0-9a-f]{32}$/.test(x.pinSalt)?x.pinSalt:undefined,
-  pinHash:typeof x.pinHash==="string"&&/^[0-9a-f]{64}$/.test(x.pinHash)?x.pinHash:undefined
- })).slice(0,100);
+  return typeof x["id"]==="string"&&x["id"].length>0&&x["id"].length<=90
+   &&typeof x["name"]==="string"&&x["name"].length>0&&x["name"].length<=90
+   &&ALL_ROLES.includes(x["role"] as OperatorRole)&&typeof x["active"]==="boolean"
+   &&typeof x["createdAt"]==="string";
+ }).map(x=>{
+  const {pinSalt,pinHash,...rest}=x;
+  return {...rest,
+   updatedAt:typeof x.updatedAt==="string"?x.updatedAt:x.createdAt,
+   ...(typeof pinSalt==="string"&&/^[0-9a-f]{32}$/.test(pinSalt)?{pinSalt}:{}),
+   ...(typeof pinHash==="string"&&/^[0-9a-f]{64}$/.test(pinHash)?{pinHash}:{})
+  };
+ }).slice(0,100);
  // No reabrir, os dados anteriores à gestão de operadores ganham apenas o gerente demo.
  return valid.length?valid:defaultOperators();
 }
