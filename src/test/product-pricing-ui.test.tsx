@@ -14,6 +14,7 @@ afterEach(()=>{cleanup();window.localStorage.clear()});
 describe("Formulário de preços de produtos",()=>{
  it("pede compra e venda separadas, mostra diferença e guarda ambas",async()=>{
   render(createElement(UbuntuApp));
+  await waitFor(()=>expect(screen.queryByText("A recuperar os dados do POS neste dispositivo…")).toBeNull());
   fireEvent.click(screen.getByRole("navigation",{name:"Navegação principal"}).querySelector<HTMLButtonElement>('.nav-link[title="Produtos e stock"]')!);
   fireEvent.click(screen.getByRole("button",{name:"Adicionar produto"}));
   expect(screen.getByLabelText("Preço de compra (MZN)")).toBeTruthy();

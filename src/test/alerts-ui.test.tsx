@@ -1,5 +1,5 @@
 import {afterEach,beforeEach,describe,expect,it,vi} from "vitest";
-import {act,cleanup,fireEvent,render,screen,within} from "@testing-library/react";
+import {act,cleanup,fireEvent,render,screen,within,waitFor} from "@testing-library/react";
 import {createElement} from "react";
 import {UbuntuApp} from "../components/UbuntuApp";
 import {initialStore,type Store} from "../lib/domain";
@@ -33,13 +33,16 @@ describe("Central de alertas e navegação",()=>{
   expect(screen.getByRole("heading",{name:"Central de notificações e alertas"})).toBeTruthy();
   expect(screen.getByRole("button",{name:"Marcar todos como lidos"})).toBeTruthy();
  });
- it("marcar todos como lidos actualiza o sino e o estado fica no armazenamento local",()=>{
+ it("marcar todos como lidos actualiza o sino e o estado fica no armazenamento local",async()=>{
   render(createElement(UbuntuApp));
+  await waitFor(()=>expect(screen.queryByText("A recuperar os dados do POS neste dispositivo…")).toBeNull());
   fireEvent.click(within(nav("Navegação principal")).getByRole("button",{name:"Central de alertas"}));
   fireEvent.click(screen.getByRole("button",{name:"Marcar todos como lidos"}));
   expect(screen.getByRole("button",{name:"Alertas (0 por ler)"})).toBeTruthy();
-  const store=JSON.parse(window.localStorage.getItem("ubuntu-pos360-demo-v1")??"{}");
-  expect(store.readAlertIds.length).toBe(2);
+  await waitFor(()=>{
+   const store=JSON.parse(window.localStorage.getItem("ubuntu-pos360-demo-v1")??"{}");
+   expect(store.readAlertIds.length).toBe(2);
+  });
   fireEvent.click(screen.getByRole("button",{name:"Lidos"}));
   expect(screen.getAllByRole("button",{name:/Marcar como por ler:/})).toHaveLength(2);
  });
