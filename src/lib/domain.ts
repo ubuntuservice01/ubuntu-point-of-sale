@@ -1,0 +1,43 @@
+export type Section = "dashboard" | "pos" | "products" | "customers" | "companies" | "modules" | "reports" | "settings";
+export type Payment = "dinheiro" | "mpesa" | "emola" | "cartao" | "fiado";
+export type Product = { id:string; name:string; sku:string; category:string; unit:string; price:number; stock:number; active:boolean };
+export type Customer = { id:string; name:string; phone:string; debt:number };
+export type CartItem = { productId:string; name:string; price:number; qty:number };
+export type Sale = { id:string; createdAt:string; items:CartItem[]; total:number; method:Payment; customerId?:string };
+export type Company = { id:string; name:string; slug:string; sector:string; status:"activa"|"teste"|"suspensa"; modules:string[] };
+export type Audit = { id:string; createdAt:string; action:string; description:string };
+export type Store = { products:Product[]; customers:Customer[]; sales:Sale[]; companies:Company[]; audits:Audit[] };
+export const SECTIONS: {id:Section;label:string}[] = [
+  {id:"dashboard",label:"Visão geral"},{id:"pos",label:"Ponto de venda"},
+  {id:"products",label:"Produtos e stock"},{id:"customers",label:"Clientes e fiado"},
+  {id:"companies",label:"Empresas"},{id:"modules",label:"Módulos"},
+  {id:"reports",label:"Relatórios"},{id:"settings",label:"Definições"}
+];
+export const MODULES = ["POS e caixa","Produtos e stock","Clientes e fiado","Farmácias","Restaurantes","Bares","Talhos","Produção","Grossistas","Catálogo online","Entregas","Fidelização","Assistente IA","Offline e sincronização","Balanças e equipamentos","Auditoria e alertas"];
+export const SECTORS = ["Farmácia","Loja","Pequeno comerciante","Restaurante","Bar","Talho","Padaria","Grossista"];
+export const DEMO_PRODUCTS:Product[] = [
+  {id:"p1",name:"Arroz 5 kg",sku:"ALI-001",category:"Mercearia",unit:"saco",price:385,stock:28,active:true},
+  {id:"p2",name:"Óleo alimentar 1 L",sku:"ALI-002",category:"Mercearia",unit:"un.",price:155,stock:36,active:true},
+  {id:"p3",name:"Açúcar 1 kg",sku:"ALI-003",category:"Mercearia",unit:"kg",price:85,stock:42,active:true},
+  {id:"p4",name:"Farinha de milho 5 kg",sku:"ALI-004",category:"Mercearia",unit:"saco",price:255,stock:18,active:true},
+  {id:"p5",name:"Água mineral 500 ml",sku:"BEB-001",category:"Bebidas",unit:"un.",price:35,stock:75,active:true},
+  {id:"p6",name:"Sumo de manga 1 L",sku:"BEB-002",category:"Bebidas",unit:"un.",price:120,stock:15,active:true},
+  {id:"p7",name:"Sabão em barra",sku:"HIG-001",category:"Higiene",unit:"un.",price:55,stock:8,active:true},
+  {id:"p8",name:"Papel higiénico 4 rolos",sku:"HIG-002",category:"Higiene",unit:"pacote",price:145,stock:22,active:true},
+  {id:"p9",name:"Leite em pó 400 g",sku:"ALI-005",category:"Mercearia",unit:"lata",price:345,stock:6,active:true},
+  {id:"p10",name:"Bolacha sortida",sku:"ALI-006",category:"Mercearia",unit:"un.",price:45,stock:41,active:true}
+];
+export const initialStore = ():Store => ({
+  products:DEMO_PRODUCTS,customers:[],sales:[],companies:[],audits:[]
+});
+export const money=(value:number)=>new Intl.NumberFormat("pt-MZ",{minimumFractionDigits:2,maximumFractionDigits:2}).format(value)+" MZN";
+export const roundMoney=(n:number)=>Math.round((n+Number.EPSILON)*100)/100;
+export const keyId=()=>globalThis.crypto?.randomUUID?.() ?? "id-"+Math.random().toString(36).slice(2);
+export function slugify(name:string){return name.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,48);}
+export function safeStore(value:unknown):Store {
+  if(!value || typeof value!=="object") return initialStore();
+  const data=value as Partial<Store>;
+  if(!Array.isArray(data.products)||!Array.isArray(data.customers)||!Array.isArray(data.sales)||!Array.isArray(data.companies)||!Array.isArray(data.audits))return initialStore();
+  return data as Store;
+}
+export function calcTotal(items:CartItem[]){return roundMoney(items.reduce((sum,item)=>sum+item.price*item.qty,0));}
