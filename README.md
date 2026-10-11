@@ -31,6 +31,10 @@ bun run dev
 bun run build
 ```
 
+## Revisão de UX/UI (pré-Supabase)
+
+A melhoria de navegação agrupada, dashboard com filtros, pesquisa rápida no POS e impressão de resumo demonstrativo está documentada em [Revisão UX/UI](docs/UX-REVISAO-2026-10-11.md). A interface continua clara e todas as operações são demonstrativas.
+
 ## Auditoria do frontend
 
 Consulte [Auditoria do Frontend — Outubro de 2026](docs/AUDITORIA-FRONTEND-2026-10-11.md) para a cobertura de navegação, correcções executadas, testes de regressão e bloqueadores antes do Supabase.

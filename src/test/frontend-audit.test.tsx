@@ -22,11 +22,18 @@ describe("Auditoria de navegação e renderização",()=>{
   expect(SECTIONS.some(s=>s.id==="companies")).toBe(true);
   render(createElement(UbuntuApp));
   const nav=screen.getByRole("navigation",{name:"Navegação principal"});
-  const buttons=within(nav).getAllByRole("button");
+  const buttons=Array.from(nav.querySelectorAll<HTMLButtonElement>(".nav-link"));
+  const groups=Array.from(nav.querySelectorAll<HTMLButtonElement>(".ux-nav-group-toggle"));
+  expect(groups).toHaveLength(5);
+  fireEvent.click(groups[0]!);
+  expect(groups[0]?.getAttribute("aria-expanded")).toBe("false");
+  fireEvent.click(groups[0]!);
+  expect(groups[0]?.getAttribute("aria-expanded")).toBe("true");
   expect(buttons).toHaveLength(SECTIONS.length);
   for(let i=0;i<SECTIONS.length;i++){
-   fireEvent.click(buttons[i]!);
-   expect(buttons[i]!.getAttribute("aria-current")).toBe("page");
+   const link=Array.from(nav.querySelectorAll<HTMLButtonElement>(".nav-link"))[i]!;
+   fireEvent.click(link);
+   expect(link.getAttribute("aria-current")).toBe("page");
    expect(screen.getAllByRole("heading",{level:1}).length).toBeGreaterThan(0);
   }
  });

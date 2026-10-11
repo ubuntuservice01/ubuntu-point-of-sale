@@ -9,6 +9,7 @@ import sectorCss from "../styles/sectors.css?url";
 import expansionCss from "../styles/expansion.css?url";
 import digitalCss from "../styles/digital.css?url";
 import publicCss from "../styles/public-catalog.css?url";
+import uxCss from "../styles/ux-refinements.css?url";
 
 export const Route = createRootRouteWithContext<{queryClient:QueryClient}>()({
  head:()=>({
@@ -20,7 +21,7 @@ export const Route = createRootRouteWithContext<{queryClient:QueryClient}>()({
    {property:"og:title",content:"Ubuntu POS 360"},
    {property:"og:description",content:"Criando pontes entre o físico e o digital."}
   ],
-  links:[{rel:"stylesheet",href:appCss},{rel:"stylesheet",href:adminCss},{rel:"stylesheet",href:companyCss},{rel:"stylesheet",href:commerceCss},{rel:"stylesheet",href:sectorCss},{rel:"stylesheet",href:expansionCss},{rel:"stylesheet",href:digitalCss},{rel:"stylesheet",href:publicCss},{rel:"icon",href:"/favicon.svg",type:"image/svg+xml"}]
+  links:[{rel:"stylesheet",href:appCss},{rel:"stylesheet",href:adminCss},{rel:"stylesheet",href:companyCss},{rel:"stylesheet",href:commerceCss},{rel:"stylesheet",href:sectorCss},{rel:"stylesheet",href:expansionCss},{rel:"stylesheet",href:digitalCss},{rel:"stylesheet",href:publicCss},{rel:"stylesheet",href:uxCss},{rel:"icon",href:"/favicon.svg",type:"image/svg+xml"}]
  }),
  shellComponent:Shell,
  component:Root
