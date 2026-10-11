@@ -1,15 +1,16 @@
 export type Section = "dashboard" | "pos" | "products" | "customers" | "companies" | "modules" | "reports" | "settings";
 export type Payment = "dinheiro" | "mpesa" | "emola" | "cartao" | "fiado";
 export type Product = { id:string; name:string; sku:string; category:string; unit:string; price:number; stock:number; active:boolean };
-export type Customer = { id:string; name:string; phone:string; debt:number };
+export type Customer = { id:string; name:string; phone:string; debt:number; creditLimit?:number|null };
 export type CartItem = { productId:string; name:string; price:number; qty:number };
-export type Sale = { id:string; createdAt:string; items:CartItem[]; total:number; method:Payment; customerId?:string };
+export type Sale = { id:string; createdAt:string; items:CartItem[]; total:number; method:Payment; customerId?:string; dueDate?:string };
 export type Company = { id:string; name:string; slug:string; sector:string; status:"activa"|"teste"|"suspensa"; modules:string[] };
 export type Audit = { id:string; createdAt:string; action:string; description:string };
-export type Store = { products:Product[]; customers:Customer[]; sales:Sale[]; companies:Company[]; audits:Audit[] };
+export type CreditMovement = { id:string; customerId:string; kind:"fiado"|"pagamento"|"abertura"; amount:number; createdAt:string; saleId?:string; dueDate?:string; method?:Exclude<Payment,"fiado">; note?:string };
+export type Store = { products:Product[]; customers:Customer[]; sales:Sale[]; companies:Company[]; audits:Audit[]; credits:CreditMovement[] };
 export const SECTIONS: {id:Section;label:string}[] = [
   {id:"dashboard",label:"Visão geral"},{id:"pos",label:"Ponto de venda"},
-  {id:"products",label:"Produtos e stock"},{id:"customers",label:"Clientes e fiado"},
+  {id:"products",label:"Produtos e stock"},{id:"customers",label:"Fiado e dívidas"},
   {id:"companies",label:"Empresas"},{id:"modules",label:"Módulos"},
   {id:"reports",label:"Relatórios"},{id:"settings",label:"Definições"}
 ];
@@ -28,7 +29,7 @@ export const DEMO_PRODUCTS:Product[] = [
   {id:"p10",name:"Bolacha sortida",sku:"ALI-006",category:"Mercearia",unit:"un.",price:45,stock:41,active:true}
 ];
 export const initialStore = ():Store => ({
-  products:DEMO_PRODUCTS,customers:[],sales:[],companies:[],audits:[]
+  products:DEMO_PRODUCTS,customers:[],sales:[],companies:[],audits:[],credits:[]
 });
 export const money=(value:number)=>new Intl.NumberFormat("pt-MZ",{minimumFractionDigits:2,maximumFractionDigits:2}).format(value)+" MZN";
 export const roundMoney=(n:number)=>Math.round((n+Number.EPSILON)*100)/100;
@@ -38,6 +39,14 @@ export function safeStore(value:unknown):Store {
   if(!value || typeof value!=="object") return initialStore();
   const data=value as Partial<Store>;
   if(!Array.isArray(data.products)||!Array.isArray(data.customers)||!Array.isArray(data.sales)||!Array.isArray(data.companies)||!Array.isArray(data.audits))return initialStore();
+  if(!Array.isArray(data.credits)){
+    // Preservar saldos existentes em demonstrações criadas antes do livro de fiado.
+    // Não inventar os movimentos de pagamento históricos.
+    const opening=(data.customers as Customer[])
+      .filter(c=>Number.isFinite(c.debt)&&c.debt>0)
+      .map(c=>({id:"abertura-"+c.id,customerId:c.id,kind:"abertura" as const,amount:roundMoney(c.debt),createdAt:new Date().toISOString(),note:"Saldo anterior; histórico detalhado não disponível."}));
+    return {...(data as Store),credits:opening};
+  }
   return data as Store;
 }
 export function calcTotal(items:CartItem[]){return roundMoney(items.reduce((sum,item)=>sum+item.price*item.qty,0));}

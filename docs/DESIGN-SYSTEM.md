@@ -1,25 +1,46 @@
-# Ubuntu POS 360 — Vibrant Enterprise UI
+# Design System Ubuntu POS 360 — Tactile Velocity
 
-Princípios: **perceptível, legível, profissional, rápido, acessível e consistente**.
+Referência de estilo aprovada: **tema azul-noite com acentos vivos**, cartões escuros com profundidade moderada, elevada legibilidade, hierarquia evidente e interacções discretas.
 
-Cores de marca:
-- Azul eléctrico `#2563EB` — primário;
-- Violeta `#7C3AED` — inovação;
-- Ciano `#06B6D4` — informação;
-- Laranja `#F97316` — destaques operacionais;
-- Verde esmeralda `#10B981` — sucesso;
-- Magenta `#EC4899` — destaques pontuais;
-- Grafite `#17233D` — texto;
-- Fundo claro `#F5F7FE`.
+## Paleta
 
-O design usa fundos claros, cabeçalhos com contraste, cartões brancos, um menu fixo recolhível, micro-interacções discretas e tipografia Inter (fallback system-ui). Não usar gradientes em todos os elementos; cores de estado só em semântica apropriada.
+| Papel | Cor | Código |
+| --- | --- | --- |
+| Principal / êxito | Verde esmeralda | `#10B981` |
+| Secundária / dados | Ciano | `#06B6D4` |
+| Terciária / alerta | Âmbar | `#F59E0B` |
+| Fundo e navegação | Azul-noite | `#0F172A` |
+| Cartões | Azul ardósia escuro | `#17243B` |
+| Texto primário | Branco suave | `#EDF8F5` |
+| Bordas | Cinza azulado | `#2C3B54` |
 
-Regras:
-1. Textos de controlo >= 14px, alvos tácteis adequados e foco visível;
-2. Acções devem ser reais, ou identificadas como demonstração/indisponíveis;
-3. Formulários com rótulos, validação e mensagens em português de Moçambique;
-4. Evitar efeitos decorativos sem função, ecrãs vazios incompreensíveis e dados fictícios como se fossem reais;
-5. Teclado, contraste e responsividade de acordo com boas práticas WCAG 2.2 AA;
-6. Dinheiro exibido em MZN com duas casas decimais;
-7. O POS prioriza a velocidade de venda; a administração prioriza a clareza de dados;
-8. A marca da Ubuntu Service aparece no rodapé; nunca alegar cobranças ou pagamentos sem backend.
+Não usar cor para transmitir informação sozinha. Botões verdes sobre fundo escuro usam **texto escuro**, para garantir contraste. Texto principal deve ser claro sobre superfícies escuras.
+
+## Tipografia
+
+- **Títulos:** `Space Grotesk` — títulos, números em destaque, KPIs.
+- **Texto do corpo:** `Hanken Grotesk` — menus, parágrafos, botões e formulários.
+- **Etiquetas:** `JetBrains Mono` — referências de vendas, etiquetas técnicas e códigos.
+
+Fontes obtidas por Google Fonts com fallback para fontes locais do sistema. Não incorporar nem disponibilizar ficheiros de fontes.
+
+## Princípios UX
+
+1. Foco visível para teclado e alvos tácteis confortáveis.
+2. Todos os preços em **MZN**, sem imposto presumido.
+3. Terminologia local: **fiado, dívidas, armazém, caixa, estabelecimento, utilizadores**.
+4. Um botão deve executar uma acção clara, ou comunicar que o recurso ainda não está disponível.
+5. Fluxos curtos, mensagens de erro úteis, ecrãs vazios explicativos.
+6. Modo POS optimizado para rapidez; administração para leitura de números e tabelas.
+7. Microinteracções rápidas; respeitar `prefers-reduced-motion`.
+8. Diferenciar operações de **demonstração** de funcionalidades bancárias e fiscais reais.
+
+## Fiado
+
+- Um cliente pode ter um limite opcional; limite 0 impede novo fiado.
+- Uma venda a fiado grava montante e prazo opcional.
+- Pagamentos parciais são abatidos aos movimentos mais antigos.
+- Dívidas só ficam **vencidas** se foi especificada uma data e essa data passou.
+- Histórico guarda movimentos (compra, pagamento, saldo de abertura); não apaga o livro.
+- **Atenção:** demonstração em `localStorage` não é sistema contabilístico definitivo. Migrar futuramente para operações transaccionais e políticas de autorização no Supabase.
+

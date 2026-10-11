@@ -9,10 +9,10 @@ Plataforma de gestão comercial multi-empresa para farmácias, lojas, pequenos c
 Esta versão é um **protótipo funcional de interface**, com dados de demonstração guardados no navegador. Inclui:
 - Dashboard responsivo, com indicadores e gráficos baseados nas vendas de demonstração.
 - POS com pesquisa, categorias, carrinho, quantidades e registo de vendas **simuladas**.
-- Produtos, gestão de stock demonstrativa e clientes/fiado.
+- Produtos, gestão de stock e módulo demonstrativo de **fiado e dívidas** com limites de crédito, vencimentos opcionais, histórico de compras e pagamentos parciais.
 - Painel demonstrativo de empresas da Ubuntu Service.
 - Catálogo de módulos e auditoria local das acções.
-- Visual vibrante, acessível e adaptável a ecrãs grandes e telemóveis.
+- Design **Tactile Velocity**: verde #10B981, ciano #06B6D4, âmbar #F59E0B e azul-noite #0F172A; fontes Space Grotesk, Hanken Grotesk e JetBrains Mono. Adaptado a ecrãs grandes e telemóveis.
 
 **Não é uma aplicação pronta a receber clientes reais.** Não existe ainda autenticação, backend Supabase, políticas RLS, processamento de pagamentos, documentos fiscais, provisionamento DNS, suporte offline sincronizado, nem ligações a balanças. Não introduza dados de clientes reais nesta versão. As operações aqui realizadas são simulações locais; não constituem prova de pagamento nem facturação.
 
