@@ -2,7 +2,7 @@ import {afterEach,describe,expect,it,vi} from "vitest";
 import {cleanup,fireEvent,render,screen,within} from "@testing-library/react";
 import {createElement} from "react";
 import {ThermalReceiptPanel,ThermalReceiptPreview,ThermalReceiptSettingsPanel} from "../components/ThermalReceipt";
-import {defaultThermalReceiptSettings} from "../lib/thermal-receipt";
+import {defaultThermalReceiptSettings,receiptAmount} from "../lib/thermal-receipt";
 import {initialStore,type Sale,type Store} from "../lib/domain";
 afterEach(()=>{cleanup();vi.restoreAllMocks()});
 const mkSale=(method:Sale["method"]="mpesa"):Sale=>({
@@ -27,7 +27,7 @@ describe("Experiência de impressão térmica",()=>{
   const receipt=screen.getByRole("region",{name:"Comprovativo não fiscal VD-DM-005"});
   expect(within(receipt).getByText("Dinheiro recebido")).toBeTruthy();
   expect(within(receipt).getByText("Troco calculado")).toBeTruthy();
-  expect(within(receipt).getByText("1 000,00 MZN")).toBeTruthy();
+  expect(within(receipt).getByText(receiptAmount(1000)+" MZN")).toBeTruthy();
   expect(within(receipt).getByText("230,00 MZN")).toBeTruthy();
  });
  it("não inventa valor recebido em vendas antigas ou com outros meios",()=>{

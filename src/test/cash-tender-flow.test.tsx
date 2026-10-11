@@ -3,8 +3,8 @@ import {cleanup,fireEvent,render,screen,waitFor,within} from "@testing-library/r
 import {createElement} from "react";
 import {UbuntuApp} from "../components/UbuntuApp";
 import {cashSessionBalance} from "../lib/commercial";
-import {initialStore,roundMoney,safeStore,type Sale,type Store} from "../lib/domain";
-import {cashTenderDetails} from "../lib/thermal-receipt";
+import {initialStore,money,roundMoney,safeStore,type Sale,type Store} from "../lib/domain";
+import {cashTenderDetails,receiptAmount} from "../lib/thermal-receipt";
 
 vi.mock("@tanstack/react-router",async()=>{
  const React=await import("react");
@@ -61,7 +61,7 @@ describe("Valor recebido e troco — registo, histórico e comprovativos",()=>{
   const modal=screen.getByRole("dialog",{name:"Venda registada — comprovativo térmico"});
   expect(within(modal).getByText("Dinheiro recebido")).toBeTruthy();
   expect(within(modal).getByText("Troco calculado")).toBeTruthy();
-  expect(within(modal).getByText("1 000,00 MZN")).toBeTruthy();
+  expect(within(modal).getByText(receiptAmount(1000)+" MZN")).toBeTruthy();
  });
  it("no Caixa Rápido persiste o valor do teclado numérico e mantém o mesmo registo de venda",async()=>{
   await openPos();
@@ -107,7 +107,7 @@ describe("Valor recebido e troco — registo, histórico e comprovativos",()=>{
   expect(within(history).getByText("Troco")).toBeTruthy();
   const first=within(history).getByText("VD-HIST").closest("tr")!;
   const old=within(history).getByText("VD-OLD").closest("tr")!;
-  expect(first.textContent).toContain("1 000,00");
+  expect(first.textContent).toContain(money(1000));
   expect(first.textContent).toContain("250,00");
   expect(old.querySelectorAll("td")[5]?.textContent).toBe("—");
   fireEvent.click(within(history).getByRole("button",{name:"Reimprimir comprovativo VD-HIST"}));
