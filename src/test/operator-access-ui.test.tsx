@@ -121,7 +121,7 @@ describe("Gestão local de operadores e navegação",()=>{
   const supervisor=worker("supervisor"),manager={...defaultOperators()[0]!,...await securePin("7294")};
   prepare([manager,supervisor],supervisor.id);
   await loadApp();
-  fireEvent.click(within(menu()).getByRole("button",{name:"Produtos e stock"}));
+  fireEvent.click(menu().querySelector<HTMLButtonElement>('.nav-link[title="Produtos e stock"]')!);
   const edit=screen.getAllByRole("button",{name:"Editar"})[0]!;
   fireEvent.click(edit);
   const productModal=screen.getByRole("dialog",{name:"Editar produto"});
