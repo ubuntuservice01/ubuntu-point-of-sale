@@ -71,6 +71,7 @@ export function registerPurchase(s:Store,supplierId:string,items:PurchaseItem[],
  const supplier=s.suppliers.find(x=>x.id===supplierId&&x.active);
  assert(supplier,"Seleccione um fornecedor activo.");
  assert(items.length>0,"Adicione pelo menos um produto à compra.");
+ assert(items.every(i=>!s.pharmaLots.some(l=>l.productId===i.productId)),"Produtos controlados por lotes devem ser recebidos no módulo Farmácias.");
  assert(items.every(i=>isPositiveQuantity(i.qty)&&isPositiveMoney(i.unitCost)&&s.products.some(p=>p.id===i.productId&&p.active)),"Verifique produtos, quantidades e custos.");
  assert(new Set(items.map(i=>i.productId)).size===items.length,"Cada produto deve aparecer apenas uma vez na compra.");
  const total=roundMoney(items.reduce((sum,i)=>sum+i.qty*i.unitCost,0));
@@ -91,6 +92,7 @@ export function registerSupplierPayment(s:Store,supplierId:string,amount:number,
 export function registerStockAdjustment(s:Store,productId:string,kind:"entrada"|"saida"|"ajuste",quantity:number,note:string):Store{
  const p=s.products.find(x=>x.id===productId&&x.active);
  assert(p,"Seleccione um produto activo.");
+ assert(!s.pharmaLots.some(l=>l.productId===productId),"O stock por lote deve ser corrigido no módulo Farmácias.");
  assert(kind==="ajuste"?(Number.isInteger(quantity)&&quantity>=0):isPositiveQuantity(quantity),"Introduza uma quantidade válida.");
  assert(note.trim().length>=3,"Indique o motivo do movimento.");
  const change=kind==="entrada"?quantity:kind==="saida"?-quantity:quantity-p.stock;
@@ -106,6 +108,8 @@ export function saleStockMovements(s:Store,sale:Sale):StockMovement[]{
  });
 }
 export function returnableQuantity(s:Store,saleId:string,productId:string){
+ const sale=s.sales.find(x=>x.id===saleId);
+ if(sale?.source==="farmacia"||sale?.source==="restaurante"||sale?.source==="bar"||sale?.source==="talho")return 0;
  const original=s.sales.find(x=>x.id===saleId)?.items.find(i=>i.productId===productId)?.qty??0;
  const prior=s.returns.filter(x=>x.saleId===saleId).flatMap(x=>x.items).filter(i=>i.productId===productId).reduce((sum,i)=>sum+i.qty,0);
  return Math.max(0,original-prior);
