@@ -1,6 +1,6 @@
 import {useEffect,useMemo,useRef,useState,type FormEvent,type ReactNode} from "react";
 import {Link} from "@tanstack/react-router";
-import {LayoutDashboard,ShoppingCart,Package,Users,Building2,Boxes,ChartNoAxesCombined,Settings,Menu,Search,Plus,ArrowUpRight,Wallet,AlertTriangle,CheckCircle2,ChevronRight,ChevronDown,Bell,Receipt,Trash2,Minus,Store,HandCoins,ShieldCheck,Warehouse,CalendarDays,Activity,Banknote,CreditCard,Smartphone,Info,Send,Check,X,SlidersHorizontal,Printer,ScanBarcode} from "lucide-react";
+import {LayoutDashboard,ShoppingCart,Package,Users,Building2,Boxes,ChartNoAxesCombined,Settings,Menu,Search,Plus,ArrowUpRight,Wallet,AlertTriangle,CheckCircle2,ChevronRight,ChevronDown,Bell,Receipt,Trash2,Minus,Store,HandCoins,Usb,ShieldCheck,Warehouse,CalendarDays,Activity,Banknote,CreditCard,Smartphone,Info,Send,Check,X,SlidersHorizontal,Printer,ScanBarcode} from "lucide-react";
 import {initialStore,safeStore,money,roundMoney,calcTotal,keyId,slugify,SECTIONS,MODULES,SECTORS,type Section,type Product,type CartItem,type Store as StoreData,type Customer,type Company,type Payment,type Sale} from "../lib/domain";
 import {canGrantCredit,creditPosition} from "../lib/credit";
 import {activeCashSession,saleStockMovements} from "../lib/commercial";
@@ -17,6 +17,8 @@ import {DashboardOverview} from "./DashboardOverview";
 import {MobileQuickNav,type QuickActionId} from "./MobileQuickNav";
 import {CameraBarcodeScanner,type CameraBarcodeScannerProps} from "./CameraBarcodeScanner";
 import {barcodeCollision,findProductByScan,normalizeBarcode,validBarcode} from "../lib/barcodes";
+import {prepareScanAudio,playSuccessfulScanBeep} from "../lib/scan-feedback";
+import {useUsbScanner} from "../hooks/useUsbScanner";
 import {CircleDollarSign,Truck,ShoppingBag,RefreshCw,ArrowLeftRight,BookOpen,HandCoins as HandCoinsIcon,Pill,ChefHat,GlassWater,Beef,Factory,PackageCheck,Gift,MapPin,Globe2} from "lucide-react";
 
 const ICONS={dashboard:LayoutDashboard,pos:ShoppingCart,products:Package,inventory:ArrowLeftRight,customers:Users,cash:Wallet,suppliers:Truck,purchases:ShoppingBag,returns:RefreshCw,expenses:CircleDollarSign,finance:BookOpen,farmacia:Pill,restaurante:ChefHat,bar:GlassWater,talho:Beef,producao:Factory,grossistas:PackageCheck,catalogo:Globe2,"encomendas-online":ShoppingBag,entregas:MapPin,fidelizacao:Gift,companies:Building2,modules:Boxes,reports:ChartNoAxesCombined,settings:Settings};
@@ -59,6 +61,8 @@ export function UbuntuApp(){
  const [query,setQuery]=useState("");
  const [category,setCategory]=useState("Todos");
  const [cart,setCart]=useState<CartItem[]>([]);
+ const cartRef=useRef(cart);
+ cartRef.current=cart;
  const [productSort,setProductSort]=useState<"nome"|"preco"|"stock">("nome");
  const [productPage,setProductPage]=useState(1);
  const [creditDueDate,setCreditDueDate]=useState("");
@@ -125,37 +129,55 @@ export function UbuntuApp(){
    case "cash":navigate("cash");break;
   }
  };
- function addToCart(p:Product){
-  if(data.pharmaLots.some(l=>l.productId===p.id)){notify("Este produto tem lotes controlados. Utilize o módulo Farmácias para respeitar as datas de validade.","error");return;}
-  const old=cart.find(i=>i.productId===p.id);if((old?.qty??0)+1>p.stock-reservedQty(data,p.id)){notify("Quantidade superior ao stock disponível.","error");return;}
-  setCart(items=>old?items.map(i=>i.productId===p.id?{...i,qty:i.qty+1}:i):[...items,{productId:p.id,name:p.name,price:p.price,qty:1}]);
+ function addToCart(p:Product):boolean{
+  if(!p.active){notify("Este produto está desactivado.","error");return false;}
+  if(data.pharmaLots.some(l=>l.productId===p.id)){
+   notify("Este produto tem lotes controlados. Utilize o módulo Farmácias para respeitar as datas de validade.","error");return false;
+  }
+  const current=cartRef.current;
+  const old=current.find(item=>item.productId===p.id);
+  if((old?.qty??0)+1>p.stock-reservedQty(data,p.id)){
+   notify("Quantidade superior ao stock disponível.","error");return false;
+  }
+  const next=old?current.map(item=>item.productId===p.id?{...item,qty:item.qty+1}:item):[...current,{productId:p.id,name:p.name,price:p.price,qty:1}];
+  cartRef.current=next;
+  setCart(next);
+  return true;
+ }
+ function tryScannedSale(raw:string):ReturnType<CameraBarcodeScannerProps["onRead"]>{
+  const product=findProductByScan(data.products,raw);
+  if(!product)return {kind:"unknown"};
+  if(!product.active)return {kind:"unavailable",message:"O produto está desactivado."};
+  if(data.pharmaLots.some(l=>l.productId===product.id))
+   return {kind:"unavailable",message:"Produto controlado por lotes. Use o módulo Farmácias."};
+  if(product.stock-reservedQty(data,product.id)<=(cartRef.current.find(item=>item.productId===product.id)?.qty??0))
+   return {kind:"unavailable",message:"O stock livre deste produto é insuficiente."};
+  if(!addToCart(product))return {kind:"unavailable",message:"O produto não está disponível para venda."};
+  playSuccessfulScanBeep();
+  notify(product.name+" adicionado ao carrinho.");
+  return {kind:"added"};
  }
  function scanSku(){
-  const exact=findProductByScan(data.products,query);
-  if(exact&&!exact.active){notify("O produto correspondente a este código está inactivo.","error");return}
-  if(!exact){notify("Código não encontrado. Verifique o SKU ou o código de barras.","error");return}
-  addToCart(exact);
+  const result=tryScannedSale(query);
+  if(result.kind==="unknown"){notify("Código não encontrado. Verifique o SKU ou o código de barras.","error");return;}
+  if(result.kind==="unavailable"){notify(result.message,"error");return;}
   setQuery("");
   posSearchRef.current?.focus();
  }
  const onScannerRead:CameraBarcodeScannerProps["onRead"]=(value)=>{
   if(scannerMode==="product"){
    setProductForm(form=>({...form,barcode:value}));
+   playSuccessfulScanBeep();
    notify("Código de barras preenchido. Guarde o produto para associar o código.");
    return {kind:"added"};
   }
-  const product=findProductByScan(data.products,value);
-  if(!product)return {kind:"unknown"};
-  if(!product.active)return {kind:"unavailable",message:"O produto está desactivado."};
-  if(data.pharmaLots.some(l=>l.productId===product.id))
-   return {kind:"unavailable",message:"Produto controlado por lotes. Use o módulo Farmácias."};
-  const quantity=cart.find(item=>item.productId===product.id)?.qty??0;
-  if(product.stock-reservedQty(data,product.id)<=quantity)
-   return {kind:"unavailable",message:"O stock livre deste produto é insuficiente."};
-  addToCart(product);
-  notify(product.name+" adicionado ao carrinho.");
-  return {kind:"added"};
+  return tryScannedSale(value);
  };
+ useUsbScanner(section==="pos"&&!modal&&!scannerMode&&!mobileMenu,(value)=>{
+  const result=tryScannedSale(value);
+  if(result.kind==="unknown")notify("Código "+value+" não encontrado. Cadastre-o em Produtos.","error");
+  else if(result.kind==="unavailable")notify(result.message,"error");
+ });
  function registerBarcodeProduct(value:string){
   setScannerMode(null);
   openProduct();
@@ -241,7 +263,10 @@ export function UbuntuApp(){
    {section==="pos"&&<><PageHeading title="Ponto de venda" subtitle="Escolha os produtos e registe uma venda de demonstração." kicker="VENDAS" right={<button className="status-chip" onClick={()=>navigate("cash")}><span/>{activeCashSession(data)?"Caixa aberto":"Abrir caixa"} <ChevronRight size={14}/></button>}/><div id="mobile-pos-tabbar" className="mobile-pos-switch" role="group" aria-label="Etapas da venda">
  <button type="button" aria-pressed={mobilePosView==="products"} className={mobilePosView==="products"?"active":""} onClick={()=>setMobilePosView("products")}><Package size={18}/> Produtos</button>
  <button type="button" aria-pressed={mobilePosView==="cart"} className={mobilePosView==="cart"?"active":""} onClick={()=>setMobilePosView("cart")}><ShoppingCart size={18}/> Carrinho {cartCount>0&&<span className="mobile-tab-count">{cartCount}</span>}</button>
- </div><div className={"pos-layout mobile-pos-layout "+(mobilePosView==="cart"?"mobile-pos-show-cart":"mobile-pos-show-products")}><section className="pos-catalog"><div className="pos-search"><Search size={20}/><input ref={posSearchRef} aria-label="Pesquisar produto" placeholder="Pesquisar nome ou ler código de barras…" value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();scanSku()}}}/>{query&&<IconButton label="Limpar pesquisa" onClick={()=>setQuery("")}><X size={17}/></IconButton>}</div><div className="mobile-scan-launch"><button type="button" className="mobile-camera-button" onClick={()=>setScannerMode("sale")} aria-label="Ler código de barras com a câmara"><ScanBarcode size={20}/> Ler código com a câmara</button></div><div className="ux-pos-search-hint"><span>Atalho <kbd>/</kbd> para pesquisar</span><span><kbd>Enter</kbd> adiciona o SKU exacto (leitor USB)</span></div><div className="category-chips">{categories.map(c=><button key={c} className={"category-chip "+(category===c?"chosen":"")} onClick={()=>setCategory(c)}>{c}</button>)}</div><div className="product-grid">{filteredProducts.map(p=><button key={p.id} className="product-tile" onClick={()=>addToCart(p)} disabled={p.stock<=reservedQty(data,p.id)||data.pharmaLots.some(l=>l.productId===p.id)}><span className="product-image"><Package size={22}/></span><b>{p.name}</b><span className="product-sku">{p.sku} · {p.unit}</span><strong className="tile-price">{money(p.price)}</strong><span className={"stock-hint "+(p.stock<=10?"stock-low":"")}>{data.pharmaLots.some(l=>l.productId===p.id)?"Usar em Farmácias":p.stock<=reservedQty(data,p.id)?"Indisponível":(p.stock-reservedQty(data,p.id))+" livres"}</span><span className="add-indicator"><Plus size={18}/></span></button>)}</div>{filteredProducts.length===0&&<Empty icon={Search} title="Nenhum produto encontrado" description="Tente outra pesquisa ou categoria."/>}</section><aside className="cart-panel"><div className="cart-heading"><span className="cart-title"><ShoppingCart size={20}/> Venda actual</span><div className="ux-cart-heading-right"><span className="cart-count">{cartCount} itens</span>{cart.length>0&&<button className="ux-clear-cart" onClick={()=>{if(window.confirm("Esvaziar a venda actual?"))setCart([])}} title="Limpar os produtos da venda"><Trash2 size={15}/> Limpar</button>}</div></div><div className="cart-items">{cart.length===0?<Empty icon={ShoppingCart} title="O carrinho está vazio" description="Seleccione produtos para iniciar uma venda."/>:cart.map(i=><div className="cart-item" key={i.productId}><div className="cart-item-info"><b>{i.name}</b><span>{money(i.price)} / un.</span></div><div className="cart-item-bottom"><div className="qty-control"><button onClick={()=>updateQty(i.productId,-1)} aria-label={"Diminuir "+i.name}><Minus size={14}/></button><span>{i.qty}</span><button onClick={()=>updateQty(i.productId,1)} aria-label={"Aumentar "+i.name}><Plus size={14}/></button></div><strong>{money(i.price*i.qty)}</strong><IconButton label={"Retirar "+i.name} onClick={()=>setCart(items=>items.filter(x=>x.productId!==i.productId))}><Trash2 size={17}/></IconButton></div></div>)}</div><div className="cart-checkout"><div className="subtotal-line"><span>Subtotal</span><b>{money(cartTotal)}</b></div><p className="tax-note">Impostos e documentos fiscais: não configurados nesta demonstração.</p><div className="total-line"><span>Total</span><strong>{money(cartTotal)}</strong></div><span className="form-label">Forma de pagamento</span><div className="payment-methods">{(["dinheiro","mpesa","emola","cartao","fiado"] as Payment[]).map(p=><button key={p} className={"payment-tile "+(payment===p?"active":"")} onClick={()=>setPayment(p)}><PaymentIcon method={p}/><span>{paymentText[p]}</span></button>)}</div><div className="credit-checkout">
+ </div><div className={"pos-layout mobile-pos-layout "+(mobilePosView==="cart"?"mobile-pos-show-cart":"mobile-pos-show-products")}><section className="pos-catalog"><div className="pos-search"><Search size={20}/><input ref={posSearchRef} aria-label="Pesquisar produto" placeholder="Pesquisar nome ou ler código de barras…" value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();scanSku()}}}/>{query&&<IconButton label="Limpar pesquisa" onClick={()=>setQuery("")}><X size={17}/></IconButton>}</div><div className="mobile-scan-launch"><button type="button" className="mobile-camera-button" onClick={()=>{prepareScanAudio();setScannerMode("sale")}} aria-label="Ler código de barras com a câmara"><ScanBarcode size={20}/> Ler código com a câmara</button></div><div className="ux-pos-search-hint"><span>Atalho <kbd>/</kbd> para pesquisar</span><span><kbd>Enter</kbd> adiciona SKU ou código de barras</span></div>
+ <div className="desktop-usb-status" role="note"><Usb size={19}/>
+ <div><strong>Leitor de códigos USB (modo teclado)</strong><span>Leia o código sem seleccionar um campo, ou utilize a pesquisa. Configure o leitor para terminar com Enter ou Tab. O bip confirma quando o artigo entra no carrinho.</span></div>
+ <button type="button" className="desktop-usb-focus" onClick={()=>posSearchRef.current?.focus()}>Focar pesquisa</button></div><div className="category-chips">{categories.map(c=><button key={c} className={"category-chip "+(category===c?"chosen":"")} onClick={()=>setCategory(c)}>{c}</button>)}</div><div className="product-grid">{filteredProducts.map(p=><button key={p.id} className="product-tile" onClick={()=>addToCart(p)} disabled={p.stock<=reservedQty(data,p.id)||data.pharmaLots.some(l=>l.productId===p.id)}><span className="product-image"><Package size={22}/></span><b>{p.name}</b><span className="product-sku">{p.sku} · {p.unit}</span><strong className="tile-price">{money(p.price)}</strong><span className={"stock-hint "+(p.stock<=10?"stock-low":"")}>{data.pharmaLots.some(l=>l.productId===p.id)?"Usar em Farmácias":p.stock<=reservedQty(data,p.id)?"Indisponível":(p.stock-reservedQty(data,p.id))+" livres"}</span><span className="add-indicator"><Plus size={18}/></span></button>)}</div>{filteredProducts.length===0&&<Empty icon={Search} title="Nenhum produto encontrado" description="Tente outra pesquisa ou categoria."/>}</section><aside className="cart-panel"><div className="cart-heading"><span className="cart-title"><ShoppingCart size={20}/> Venda actual</span><div className="ux-cart-heading-right"><span className="cart-count">{cartCount} itens</span>{cart.length>0&&<button className="ux-clear-cart" onClick={()=>{if(window.confirm("Esvaziar a venda actual?"))setCart([])}} title="Limpar os produtos da venda"><Trash2 size={15}/> Limpar</button>}</div></div><div className="cart-items">{cart.length===0?<Empty icon={ShoppingCart} title="O carrinho está vazio" description="Seleccione produtos para iniciar uma venda."/>:cart.map(i=><div className="cart-item" key={i.productId}><div className="cart-item-info"><b>{i.name}</b><span>{money(i.price)} / un.</span></div><div className="cart-item-bottom"><div className="qty-control"><button onClick={()=>updateQty(i.productId,-1)} aria-label={"Diminuir "+i.name}><Minus size={14}/></button><span>{i.qty}</span><button onClick={()=>updateQty(i.productId,1)} aria-label={"Aumentar "+i.name}><Plus size={14}/></button></div><strong>{money(i.price*i.qty)}</strong><IconButton label={"Retirar "+i.name} onClick={()=>setCart(items=>items.filter(x=>x.productId!==i.productId))}><Trash2 size={17}/></IconButton></div></div>)}</div><div className="cart-checkout"><div className="subtotal-line"><span>Subtotal</span><b>{money(cartTotal)}</b></div><p className="tax-note">Impostos e documentos fiscais: não configurados nesta demonstração.</p><div className="total-line"><span>Total</span><strong>{money(cartTotal)}</strong></div><span className="form-label">Forma de pagamento</span><div className="payment-methods">{(["dinheiro","mpesa","emola","cartao","fiado"] as Payment[]).map(p=><button key={p} className={"payment-tile "+(payment===p?"active":"")} onClick={()=>setPayment(p)}><PaymentIcon method={p}/><span>{paymentText[p]}</span></button>)}</div><div className="credit-checkout">
   <Field label={payment==="fiado"?"Cliente para fiado":"Cliente (opcional, para acumular pontos)"}><select value={customerId} onChange={e=>setCustomerId(e.target.value)} required={payment==="fiado"}><option value="">Seleccione um cliente</option>{data.customers.map(c=><option value={c.id} key={c.id}>{c.name} · {money(c.debt)} em dívida</option>)}</select></Field>
   {payment==="fiado"&&customerId&&<div className="credit-checkout-summary">{(()=>{const c=data.customers.find(c=>c.id===customerId);return c?<><span>Em dívida: <b>{money(c.debt)}</b></span><span>Limite: <b>{c.creditLimit==null?"Sem limite definido":money(c.creditLimit)}</b></span></>:null})()}</div>}
   {payment==="fiado"&&<Field label="Vencimento (opcional)"><input type="date" min={todayKey()} value={creditDueDate} onChange={e=>setCreditDueDate(e.target.value)}/></Field>}
@@ -285,7 +310,7 @@ export function UbuntuApp(){
     onClose={()=>setScannerMode(null)} onRead={onScannerRead}
     {...(scannerMode==="sale"?{onRegister:registerBarcodeProduct}:{})}/>}
   {modal==="product"&&scannerMode!=="product"&&<Modal title={editingProduct?"Editar produto":"Adicionar produto"} onClose={()=>setModal(null)}><form className="form-grid" onSubmit={saveProduct}><Field label="Nome do produto"><input required value={productForm.name} onChange={e=>setProductForm({...productForm,name:e.target.value})} placeholder="Ex.: Arroz 5 kg"/></Field><Field label="Código / SKU"><input required value={productForm.sku} onChange={e=>setProductForm({...productForm,sku:e.target.value})} placeholder="Ex.: ALI-001"/></Field><Field label="Código de barras (opcional)"><input autoComplete="off" maxLength={80} value={productForm.barcode} onChange={e=>setProductForm({...productForm,barcode:e.target.value})} placeholder="EAN, UPC ou Código 128"/></Field>
- <div className="mobile-scan-launch mobile-product-scan"><button type="button" className="mobile-camera-button" onClick={()=>setScannerMode("product")}><ScanBarcode size={19}/> Ler código com a câmara</button></div>
+ <div className="mobile-scan-launch mobile-product-scan"><button type="button" className="mobile-camera-button" onClick={()=>{prepareScanAudio();setScannerMode("product")}}><ScanBarcode size={19}/> Ler código com a câmara</button></div>
  <Field label="Categoria"><input required value={productForm.category} onChange={e=>setProductForm({...productForm,category:e.target.value})}/></Field><Field label="Unidade de venda"><select value={productForm.unit} onChange={e=>setProductForm({...productForm,unit:e.target.value})}><option>un.</option><option>kg</option><option>g</option><option>L</option><option>caixa</option><option>saco</option><option>pacote</option></select></Field><div className="product-pricing-fields">
  <Field label="Preço de compra (MZN)"><input required type="number" step="0.01" min="0.01" value={productForm.purchasePrice} onChange={e=>setProductForm({...productForm,purchasePrice:e.target.value})} placeholder="Ex.: 100.00"/></Field>
  <Field label="Preço de venda (MZN)"><input required type="number" step="0.01" min="0.01" value={productForm.price} onChange={e=>setProductForm({...productForm,price:e.target.value})} placeholder="Ex.: 125.00"/></Field>

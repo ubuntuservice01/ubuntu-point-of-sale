@@ -15,6 +15,30 @@ Estado: frontend demonstrativo (sem Supabase nem pagamentos reais).
 
 No cadastro/edição de produtos existe um campo **Código de barras (opcional)**, separado do SKU, e um botão móvel para ler o código com a câmara. Produtos de versões anteriores mantêm-se válidos, sem inventar códigos.
 
+## Confirmação sonora — bip de leitura
+
+- Ao **adicionar um produto ao carrinho por leitura de código** (câmara, leitor USB ou SKU confirmado com Enter), o POS reproduz um **bip curto** pelo Web Audio do navegador.
+- A leitura de código na janela de cadastro também confirma o preenchimento com um bip.
+- Não toca quando o código não existe, o produto foi desactivado, o stock livre é insuficiente ou o artigo exige controlo de lotes.
+- O bip é produzido localmente, sem ficheiro de áudio descarregado e sem envio de dados.
+- Ao abrir o leitor de câmara, o áudio é preparado no clique do operador para aumentar a compatibilidade com as restrições de reprodução dos browsers. O bip depende do volume e das permissões de áudio do dispositivo; não se pode forçar o som em aparelhos silenciados.
+
+## Leitor USB no computador (modo teclado)
+
+O POS aceita os leitores USB de códigos de barras que se identificam como **teclado** ("keyboard wedge"). Não exige WebUSB, WebHID nem instalação de controladores no frontend.
+
+**Modo automático:** em **Ponto de venda**, ecrã de computador acima de 650 px, quando nenhum formulário está em edição, basta ler o código com o leitor USB. Se o leitor transmitir os caracteres rapidamente e terminar em **Enter** ou **Tab**, o produto será procurado pelo código comercial (EAN/UPC) ou SKU e adicionado ao carrinho com o bip de confirmação.
+
+**Modo compatível:** caso o leitor transmita os caracteres devagar, não use sufixo, ou o navegador tenha foco num campo, clique **Focar pesquisa** (ou na caixa de pesquisa) e leia o código. Configure preferencialmente o leitor para adicionar **Enter** ao final de cada leitura.
+
+**Protecção contra leituras acidentais:**
+- O reconhecimento global só funciona no POS, em computador, fora de modais e da gaveta de navegação.
+- O código deve conter pelo menos seis caracteres, chegar como sequência rápida e terminar em Enter ou Tab num prazo curto. Isto reduz o risco de interpretar a digitação normal como leitura de produtos.
+- Não intercepta teclas enquanto se está a escrever em campos `input`, `textarea`, `select` ou elementos editáveis.
+- Os produtos continuam sujeitos ao controlo de stock e reservas.
+
+**Limites:** esta implementação não detecta fisicamente se existe um scanner USB ligado; detecta os eventos de teclado enviados por equipamentos configurados nesse modo. Dispositivos que exigem drivers próprios, acesso HID específico ou integração com porta série podem necessitar de uma solução adicional. O teclado virtual dos telemóveis não activa a captura USB global.
+
 ## Compatibilidade
 
 A leitura automática desta fase usa a API nativa **BarcodeDetector** e `getUserMedia`, quando disponíveis. Não é uma garantia de funcionamento em todos os telemóveis.
@@ -33,6 +57,7 @@ A leitura automática desta fase usa a API nativa **BarcodeDetector** e `getUser
 - Há validação de colisões entre o campo Código de barras e os SKUs de outros produtos, inclusive diferenças UPC-A / EAN-13 com zero inicial.
 - A operação de venda respeita o mesmo controlo de stock livre, reservas de comandas e encomendas e restrição de lotes farmacêuticos.
 - A câmara é desligada quando a janela fecha ou a leitura termina; os fotogramas são analisados localmente pelo navegador.
+- O bip de leitura não contém informações do produto nem transmissão externa.
 - Não se gravam fotografias, vídeos ou leituras em servidores. Um código digitado/registado fica guardado apenas no `localStorage` da demonstração.
 - O código de barras serve para **identificar o produto**, não autenticar o pagamento, certificar o artigo nem emitir factura.
 - A aplicação não gera automaticamente EAN legítimos nem valida registos de entidades emissoras GS1.
@@ -44,6 +69,7 @@ A leitura automática desta fase usa a API nativa **BarcodeDetector** e `getUser
 - Produto desconhecido: preencher automaticamente os dois códigos no cadastro.
 - Leitura para editar o cadastro; rejeitar código duplicado.
 - Câmara simulada: pedir acesso, reconhecer e parar os tracks da câmara.
+- Sequências USB rápidas por Enter/Tab, entrada manual, bloqueio em formulários e confirmação sonora somente após sucesso.
 - Os testes de código **não substituem** ensaios físicos de leitura de embalagens num Android compatível ou outros dispositivos.
 
 ## Restantes etapas propostas

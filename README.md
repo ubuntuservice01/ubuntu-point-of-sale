@@ -33,7 +33,7 @@ bun run build
 
 ## Leitura de código de barras pela câmara (etapa 1/5)
 
-O POS em telemóveis permite procurar códigos pela câmara quando o navegador suporta BarcodeDetector, ligar um código único a um produto e continuar manualmente quando não suporta. Ver [Leitor de código de barras](docs/CODIGOS-BARRAS-CAMARA.md) para compatibilidade e testes.
+O POS em telemóveis permite procurar códigos pela câmara quando o navegador suporta BarcodeDetector, ligar um código único a um produto e continuar manualmente quando não suporta. Uma leitura aceite emite um bip curto; no computador, o POS aceita leitores USB em modo teclado com Enter/Tab. Ver [Leitor de código de barras](docs/CODIGOS-BARRAS-CAMARA.md) para compatibilidade e testes.
 
 ## Experiência mobile para o comerciante
 

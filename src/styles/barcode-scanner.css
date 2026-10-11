@@ -60,3 +60,26 @@
 @media(prefers-reduced-motion:reduce){
  .scan-overlay *{animation-duration:.01ms!important;transition-duration:.01ms!important}
 }
+
+/* Leitores USB que emulam um teclado: informação apenas no desktop. */
+.desktop-usb-status{
+ display:flex;align-items:center;gap:12px;
+ background:#f2f8f4;border:1px solid #d0e6d8;border-radius:11px;
+ padding:13px 14px;margin:12px 0 14px;color:#28553d;
+}
+.desktop-usb-status>svg{flex:none;color:#087f61}
+.desktop-usb-status>div{flex:1;min-width:0;display:grid;gap:4px}
+.desktop-usb-status strong{font-size:12px;color:#20533a}
+.desktop-usb-status span{font-size:11px;line-height:1.5;color:#537363}
+.desktop-usb-focus{
+ min-height:41px;border:1px solid #abd9bf;background:#fff;color:#087f61;
+ border-radius:9px;padding:9px 12px;font-weight:800;font-size:11px;white-space:nowrap;
+}
+.desktop-usb-focus:hover{background:#e8f5ed}
+@media(max-width:900px) and (min-width:651px){
+ .desktop-usb-status{flex-wrap:wrap}
+ .desktop-usb-focus{margin-left:31px}
+}
+@media(max-width:650px){
+ .desktop-usb-status{display:none}
+}
