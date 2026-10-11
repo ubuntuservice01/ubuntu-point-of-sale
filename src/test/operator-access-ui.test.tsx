@@ -127,6 +127,7 @@ describe("Gestão local de operadores e navegação",()=>{
   const productModal=screen.getByRole("dialog",{name:"Editar produto"});
   const price=within(productModal).getByRole("spinbutton",{name:"Preço de venda (MZN)"});
   fireEvent.change(price,{target:{value:"399"}});
+  fireEvent.change(within(productModal).getByRole("spinbutton",{name:"Preço de compra (MZN)"}),{target:{value:"250"}});
   fireEvent.click(within(productModal).getByRole("button",{name:"Guardar produto"}));
   const approval=screen.getByRole("dialog",{name:"Autorização do responsável"});
   fireEvent.change(within(approval).getByPlaceholderText("PIN do aprovador"),{target:{value:"7294"}});
