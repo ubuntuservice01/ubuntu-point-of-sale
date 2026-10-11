@@ -1,0 +1,62 @@
+/* Leitor de código de barras: painel táctil para o POS mobile. */
+.scan-overlay{position:fixed;inset:0;z-index:120;background:rgba(7,18,30,.82);display:grid;place-items:center;padding:12px;overscroll-behavior:contain}
+.scan-dialog{background:#fff;border-radius:17px;box-shadow:0 24px 70px #02061765;width:min(100%,540px);max-height:calc(100dvh - 24px);overflow:auto;color:#17233b;outline:none}
+.scan-heading{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:18px 19px;border-bottom:1px solid #e2e8f0}
+.scan-heading h2{font-size:18px;margin:7px 0 0;color:#17233b}
+.scan-eyebrow{display:flex;align-items:center;gap:7px;color:#087f61;font-size:10px;letter-spacing:1px;font-weight:850}
+.scan-close{height:44px;width:44px;display:grid;place-items:center;border:1px solid #e2e8f0;background:#f8fafc;color:#334155;border-radius:11px;flex:none}
+.scan-content{padding:16px 19px 20px}
+.scan-preview{background:#111827;min-height:195px;aspect-ratio:5/3;position:relative;border-radius:13px;overflow:hidden;display:grid;place-items:center}
+.scan-preview video{position:absolute;inset:0;height:100%;width:100%;object-fit:cover;background:#111827}
+.scan-preview:after{position:absolute;content:"";inset:0;background:linear-gradient(180deg,transparent 62%,#06142788);pointer-events:none}
+.scan-frame{position:relative;z-index:1;width:74%;height:65%;max-width:360px;pointer-events:none}
+.scan-frame span{position:absolute;width:30px;height:30px;border:3px solid #64e4a9}
+.scan-frame span:nth-child(1){top:0;left:0;border-right:0;border-bottom:0;border-radius:9px 0 0 0}
+.scan-frame span:nth-child(2){top:0;right:0;border-left:0;border-bottom:0;border-radius:0 9px 0 0}
+.scan-frame span:nth-child(3){bottom:0;left:0;border-right:0;border-top:0;border-radius:0 0 0 9px}
+.scan-frame span:nth-child(4){bottom:0;right:0;border-left:0;border-top:0;border-radius:0 0 9px 0}
+.scan-status{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;color:#fff;background:#111827eb;padding:15px;text-align:center;font-size:13px}
+.scan-status svg{color:#90edbb}
+.scan-status-icon{width:44px;height:44px;display:grid;place-items:center;border:1px solid #475569;border-radius:12px}
+.scan-live{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;white-space:nowrap;z-index:4;color:#fff;font-size:12px;font-weight:750;background:#132e25bb;padding:7px 10px;border-radius:8px}
+.scan-live span{width:8px;height:8px;background:#48eea2;border-radius:50%}
+.scan-help{font-size:12px;color:#526172;line-height:1.6;margin:13px 1px 0}
+.scan-warning,.scan-feedback{border-radius:10px;border:1px solid #f5d9ab;background:#fffbf0;color:#80581d;font-size:12px;line-height:1.6;padding:12px;margin-top:13px;display:grid;gap:7px}
+.scan-feedback{background:#f3f9f5;border-color:#bfe1cb;color:#285941}
+.scan-warning code,.scan-feedback code{color:#17233b;font-family:"JetBrains Mono",monospace;overflow-wrap:anywhere;font-size:13px;font-weight:750}
+.scan-result-actions{display:grid;gap:10px;margin-top:13px}
+.scan-primary,.scan-secondary{min-height:49px;display:flex;gap:10px;align-items:center;justify-content:center;border-radius:9px;padding:11px 14px;font-size:13px;font-weight:800}
+.scan-primary{color:#fff;background:#087f61;border:1px solid #087f61}
+.scan-secondary{color:#087f61;background:#f3faf5;border:1px solid #b7dbc5}
+.scan-retry{width:100%;margin-top:11px}
+.scan-manual{padding-top:17px;margin-top:15px;border-top:1px solid #e2e8f0;display:grid;gap:10px}
+.scan-manual>label{font-size:12px;font-weight:850;color:#334155;display:flex;align-items:center;gap:9px}
+.scan-manual>label svg{color:#087f61}
+.scan-manual>div{display:flex;align-items:center;gap:8px}
+.scan-manual input{min-width:0;flex:1;min-height:50px;padding:12px;border:1px solid #cbd5e1;border-radius:9px;font-size:16px!important;background:#fff;color:#17233b}
+.scan-manual button{min-height:50px;background:#087f61;border:1px solid #087f61;border-radius:9px;color:#fff;padding:11px 17px;font-size:12px;font-weight:850}
+.scan-privacy{display:flex;align-items:flex-start;gap:8px;margin:16px 0 0;font-size:11px;line-height:1.6;color:#64748b}
+.scan-privacy svg{color:#087f61;flex:none;margin-top:2px}
+.mobile-camera-button{display:none}
+@media(max-width:650px){
+ .mobile-camera-button{display:inline-flex;align-items:center;justify-content:center;gap:9px;background:#eaf7f0;color:#087f61;border:1px solid #b9dfc9;border-radius:11px;padding:11px 14px;min-height:52px;font-weight:850;font-size:13px}
+ .mobile-camera-button svg{width:21px;height:21px}
+ .mobile-scan-launch{display:flex;align-items:center;gap:10px;margin:12px 0}
+ .mobile-scan-launch .mobile-camera-button{flex:1}
+ .scan-overlay{padding:0;align-items:end}
+ .scan-dialog{border-radius:19px 19px 0 0;width:100%;max-height:100dvh;max-height:calc(100dvh - env(safe-area-inset-top,0px));padding-bottom:env(safe-area-inset-bottom,0px)}
+ .scan-heading{padding:16px}
+ .scan-content{padding:14px 16px 20px}
+ .scan-preview{min-height:180px;aspect-ratio:5/3}
+ .scan-manual input{font-size:16px!important}
+}
+@media(max-width:350px){
+ .scan-manual>div{flex-wrap:wrap}
+ .scan-manual>div>button{width:100%}
+}
+@media print{
+ .scan-overlay,.mobile-camera-button,.mobile-scan-launch{display:none!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .scan-overlay *{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}

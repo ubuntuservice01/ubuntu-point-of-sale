@@ -10,6 +10,7 @@ import expansionCss from "../styles/expansion.css?url";
 import digitalCss from "../styles/digital.css?url";
 import publicCss from "../styles/public-catalog.css?url";
 import uxCss from "../styles/ux-refinements.css?url";
+import barcodeCss from "../styles/barcode-scanner.css?url";
 import mobilePosCss from "../styles/mobile-pos.css?url";
 
 export const Route = createRootRouteWithContext<{queryClient:QueryClient}>()({
@@ -22,7 +23,7 @@ export const Route = createRootRouteWithContext<{queryClient:QueryClient}>()({
    {property:"og:title",content:"Ubuntu POS 360"},
    {property:"og:description",content:"Criando pontes entre o físico e o digital."}
   ],
-  links:[{rel:"stylesheet",href:appCss},{rel:"stylesheet",href:adminCss},{rel:"stylesheet",href:companyCss},{rel:"stylesheet",href:commerceCss},{rel:"stylesheet",href:sectorCss},{rel:"stylesheet",href:expansionCss},{rel:"stylesheet",href:digitalCss},{rel:"stylesheet",href:publicCss},{rel:"stylesheet",href:uxCss},{rel:"stylesheet",href:mobilePosCss},{rel:"icon",href:"/favicon.svg",type:"image/svg+xml"}]
+  links:[{rel:"stylesheet",href:appCss},{rel:"stylesheet",href:adminCss},{rel:"stylesheet",href:companyCss},{rel:"stylesheet",href:commerceCss},{rel:"stylesheet",href:sectorCss},{rel:"stylesheet",href:expansionCss},{rel:"stylesheet",href:digitalCss},{rel:"stylesheet",href:publicCss},{rel:"stylesheet",href:uxCss},{rel:"stylesheet",href:barcodeCss},{rel:"stylesheet",href:mobilePosCss},{rel:"icon",href:"/favicon.svg",type:"image/svg+xml"}]
  }),
  shellComponent:Shell,
  component:Root

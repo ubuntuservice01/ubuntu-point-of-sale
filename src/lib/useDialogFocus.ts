@@ -15,7 +15,7 @@ export function useDialogFocus<T extends HTMLElement>(onClose:()=>void){
   const focusable=()=>Array.from(container?.querySelectorAll<HTMLElement>(
    'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
   )??[]).filter(item=>item.getAttribute("aria-hidden")!=="true");
-  (focusable().find(item=>item.matches("input,select,textarea,[autofocus]"))??focusable()[0]??container)?.focus();
+  (focusable().find(item=>item.hasAttribute("data-dialog-initial-focus"))??focusable().find(item=>item.matches("input,select,textarea,[autofocus]"))??focusable()[0]??container)?.focus();
   const keydown=(event:KeyboardEvent)=>{
    if(event.key==="Escape"){event.preventDefault();closeRef.current();return;}
    if(event.key!=="Tab")return;

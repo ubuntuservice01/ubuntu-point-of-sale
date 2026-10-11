@@ -1,6 +1,6 @@
 export type Section = "dashboard" | "pos" | "products" | "customers" | "companies" | "modules" | "reports" | "finance" | "settings" | "cash" | "suppliers" | "purchases" | "inventory" | "returns" | "expenses" | "farmacia" | "restaurante" | "bar" | "talho" | "producao" | "grossistas" | "catalogo" | "encomendas-online" | "entregas" | "fidelizacao";
 export type Payment = "dinheiro" | "mpesa" | "emola" | "cartao" | "fiado";
-export type Product = { id:string; name:string; sku:string; category:string; unit:string; price:number; purchasePrice?:number; stock:number; active:boolean };
+export type Product = { id:string; name:string; sku:string; barcode?:string; category:string; unit:string; price:number; purchasePrice?:number; stock:number; active:boolean };
 export type Customer = { id:string; name:string; phone:string; debt:number; creditLimit?:number|null };
 export type CartItem = { productId:string; name:string; price:number; qty:number };
 export type Sale = { id:string; createdAt:string; items:CartItem[]; total:number; method:Payment; customerId?:string; dueDate?:string; cashSessionId?:string; source?: "pos"|"farmacia"|"restaurante"|"bar"|"talho"|"grossistas"|"online"; sourceId?:string; deliveryFee?:number };

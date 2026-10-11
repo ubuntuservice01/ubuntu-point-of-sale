@@ -31,6 +31,10 @@ bun run dev
 bun run build
 ```
 
+## Leitura de código de barras pela câmara (etapa 1/5)
+
+O POS em telemóveis permite procurar códigos pela câmara quando o navegador suporta BarcodeDetector, ligar um código único a um produto e continuar manualmente quando não suporta. Ver [Leitor de código de barras](docs/CODIGOS-BARRAS-CAMARA.md) para compatibilidade e testes.
+
 ## Experiência mobile para o comerciante
 
 Menu inferior e acções rápidas com áreas de toque maiores **apenas no telemóvel**, além do POS em duas vistas (Produtos e Carrinho). Ver [UX Mobile](docs/UX-MOBILE-2026-10-11.md).
