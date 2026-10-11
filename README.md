@@ -4,13 +4,13 @@
 
 Plataforma de gestão comercial multi-empresa para farmácias, lojas, pequenos comerciantes, restaurantes, bares, talhos, padarias e grossistas.
 
-## Estado da versão 0.1
+## Estado do frontend (demonstração)
 
 Esta versão é um **protótipo funcional de interface**, com dados de demonstração guardados no navegador. Inclui:
 - Dashboard responsivo, com indicadores e gráficos baseados nas vendas de demonstração.
 - POS com pesquisa, categorias, carrinho, quantidades e registo de vendas **simuladas**.
 - Produtos, gestão de stock e módulo demonstrativo de **fiado e dívidas** com limites de crédito, vencimentos opcionais, histórico de compras e pagamentos parciais.
-- Painel demonstrativo de empresas da Ubuntu Service.
+- **Super Admin independente em `/super-admin`**, com visão geral, empresas, planos, licenças, módulos, projecções de subscrição, auditoria e definições.
 - Catálogo de módulos e auditoria local das acções.
 - **Design claro e humano**: fundo #F8FAFC, cartões brancos, verde esmeralda #10B981, ciano #06B6D4 e âmbar #F59E0B; fontes Space Grotesk, Hanken Grotesk e JetBrains Mono. Sem barras decorativas no topo dos cartões, adaptado a ecrãs grandes e telemóveis.
 
@@ -35,6 +35,6 @@ bun run build
 5. **Offline seguro e IA:** IndexedDB, fila idempotente, reconciliação e assistente limitado por tenant.
 6. **Conformidade, testes de segurança e piloto.**
 
-Consulte `docs/ARQUITECTURA.md`, `docs/DESIGN-SYSTEM.md` e `docs/UX-ECRAS.md`.
+Consulte `docs/ARQUITECTURA.md`, `docs/DESIGN-SYSTEM.md`, `docs/UX-ECRAS.md` e `docs/FRONTEND-SUPER-ADMIN.md`.
 
 **Nota fiscal:** taxas e regras de tributação devem ser parametrizadas depois de verificação legal em Moçambique. Não há taxa de IVA presumida nesta versão.

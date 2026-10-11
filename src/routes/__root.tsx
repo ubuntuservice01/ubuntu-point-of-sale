@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import appCss from "../styles.css?url";
+import adminCss from "../styles/admin.css?url";
 
 export const Route = createRootRouteWithContext<{queryClient:QueryClient}>()({
  head:()=>({
@@ -13,7 +14,7 @@ export const Route = createRootRouteWithContext<{queryClient:QueryClient}>()({
    {property:"og:title",content:"Ubuntu POS 360"},
    {property:"og:description",content:"Criando pontes entre o físico e o digital."}
   ],
-  links:[{rel:"stylesheet",href:appCss},{rel:"icon",href:"/favicon.svg",type:"image/svg+xml"}]
+  links:[{rel:"stylesheet",href:appCss},{rel:"stylesheet",href:adminCss},{rel:"icon",href:"/favicon.svg",type:"image/svg+xml"}]
  }),
  shellComponent:Shell,
  component:Root

@@ -11,7 +11,7 @@ export type Store = { products:Product[]; customers:Customer[]; sales:Sale[]; co
 export const SECTIONS: {id:Section;label:string}[] = [
   {id:"dashboard",label:"Visão geral"},{id:"pos",label:"Ponto de venda"},
   {id:"products",label:"Produtos e stock"},{id:"customers",label:"Fiado e dívidas"},
-  {id:"companies",label:"Empresas"},{id:"modules",label:"Módulos"},
+  {id:"modules",label:"Módulos"},
   {id:"reports",label:"Relatórios"},{id:"settings",label:"Definições"}
 ];
 export const MODULES = ["POS e caixa","Produtos e stock","Clientes e fiado","Farmácias","Restaurantes","Bares","Talhos","Produção","Grossistas","Catálogo online","Entregas","Fidelização","Assistente IA","Offline e sincronização","Balanças e equipamentos","Auditoria e alertas"];

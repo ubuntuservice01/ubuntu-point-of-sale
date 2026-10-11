@@ -1,4 +1,5 @@
 import {useEffect,useMemo,useState,type FormEvent,type ReactNode} from "react";
+import {Link} from "@tanstack/react-router";
 import {LayoutDashboard,ShoppingCart,Package,Users,Building2,Boxes,ChartNoAxesCombined,Settings,Menu,Search,Plus,ArrowUpRight,Wallet,AlertTriangle,CheckCircle2,ChevronRight,Receipt,Trash2,Minus,Store,HandCoins,ShieldCheck,Warehouse,CalendarDays,Activity,Banknote,CreditCard,Smartphone,Info,Send,Check,X,SlidersHorizontal} from "lucide-react";
 import {initialStore,safeStore,money,roundMoney,calcTotal,keyId,slugify,SECTIONS,MODULES,SECTORS,type Section,type Product,type CartItem,type Store as StoreData,type Customer,type Company,type Payment,type Sale} from "../lib/domain";
 import {canGrantCredit,creditPosition} from "../lib/credit";
@@ -106,7 +107,7 @@ export function UbuntuApp(){
    <div className="sidebar-foot">{!collapsed&&<div className="support"><div className="support-icon"><ShieldCheck size={20}/></div><b>Ubuntu Service, Lda.</b><p>Criando pontes entre o físico e o digital.</p></div>}<button className="collapse-toggle" onClick={()=>setCollapsed(!collapsed)} title={collapsed?"Expandir menu":"Recolher menu"}><Menu size={19}/>{!collapsed&&"Recolher menu"}</button></div>
   </aside>
   {mobileMenu&&<button className="mobile-screen" aria-label="Fechar menu" onClick={()=>setMobileMenu(false)}/>}
-  <div className="workspace"><header className="topbar"><div className="top-left"><IconButton label="Abrir menu" className="mobile-menu" onClick={()=>setMobileMenu(true)}><Menu size={21}/></IconButton><span className="breadcrumbs">Plataforma <ChevronRight size={15}/><b>{SECTIONS.find(s=>s.id===section)?.label}</b></span></div><div className="top-right"><DemoBadge/><span className="header-divider"/><span className="profile-badge" title="Perfil de demonstração">US</span></div></header>
+  <div className="workspace"><header className="topbar"><div className="top-left"><IconButton label="Abrir menu" className="mobile-menu" onClick={()=>setMobileMenu(true)}><Menu size={21}/></IconButton><span className="breadcrumbs">Plataforma <ChevronRight size={15}/><b>{SECTIONS.find(s=>s.id===section)?.label}</b></span></div><div className="top-right"><Link to="/super-admin" className="sa-store-switch"><ShieldCheck size={16}/> Super Admin <ArrowUpRight size={14}/></Link><DemoBadge/><span className="header-divider"/><span className="profile-badge" title="Perfil de demonstração">US</span></div></header>
   <main className="page-area">
    {notice&&<div role="status" className={"toast "+notice.kind}><span>{notice.message}</span><IconButton label="Fechar aviso" onClick={()=>setNotice(null)}><X size={16}/></IconButton></div>}
    {section==="dashboard"&&<>
