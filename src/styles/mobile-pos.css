@@ -1,0 +1,227 @@
+/*
+ * Ubuntu POS 360 — interface mobile de operação rápida.
+ * Exclusivamente até 650px; desktop/tablet não são alterados.
+ * Toque confortável, barra fixa, POS em duas etapas e menu rápido.
+ */
+.mobile-bottom-nav,.mobile-pos-switch,.mobile-floating-cart,.mobile-quick-scrim,.mobile-quick-sheet{display:none}
+@media(max-width:650px){
+ .ubuntu-shell{
+  --mobile-touch:48px;
+  --mobile-bar-height:72px;
+  --mobile-safe-bottom:env(safe-area-inset-bottom,0px);
+ }
+ .ubuntu-shell .page-area{
+  padding-bottom:calc(110px + env(safe-area-inset-bottom,0px));
+  overflow-x:clip;
+ }
+ .mobile-bottom-nav{
+  position:fixed;
+  left:0;right:0;bottom:0;z-index:60;
+  display:grid;grid-template-columns:repeat(5,minmax(0,1fr));
+  align-items:stretch;
+  height:calc(var(--mobile-bar-height) + var(--mobile-safe-bottom));
+  padding:4px 5px calc(4px + var(--mobile-safe-bottom));
+  background:#fff;
+  border-top:1px solid #dbe8e0;
+  box-shadow:0 -5px 25px rgba(19,49,35,.10);
+  isolation:isolate;
+ }
+ .mobile-nav-link{
+  position:relative;
+  min-width:0;min-height:60px;
+  border:0;background:transparent;color:#64748b;
+  padding:8px 3px 5px;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;
+  font-size:10.5px;font-weight:750;
+  border-radius:11px;
+  -webkit-tap-highlight-color:transparent;
+ }
+ .mobile-nav-link svg{width:23px;height:23px}
+ .mobile-nav-link>span{white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+ .mobile-nav-link.is-current{color:#087f61;background:#edf8f1}
+ .mobile-nav-link:active:not(:disabled){background:#dff2e6}
+ .mobile-nav-count{
+  position:absolute;top:2px;right:12%;border-radius:12px;
+  display:grid;place-items:center;min-width:17px;height:17px;
+  padding:1px 4px;background:#087f61;color:#fff;
+  font-size:10px;font-variant-numeric:tabular-nums;font-weight:850;
+ }
+ .mobile-floating-cart{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  position:fixed;left:50%;transform:translateX(-50%);z-index:58;
+  bottom:calc(var(--mobile-bar-height) + var(--mobile-safe-bottom) + 11px);
+  width:min(calc(100% - 28px),470px);
+  min-height:55px;border:1px solid #076e51;border-radius:13px;
+  color:#fff;background:#087f61;
+  box-shadow:0 12px 30px #064e3b3b;
+  padding:10px 15px;
+  font-size:13px;
+ }
+ .mobile-floating-cart>span{display:inline-flex;align-items:center;gap:9px;min-width:0}
+ .mobile-floating-cart>span>strong{font-size:14px;white-space:nowrap}
+ .mobile-floating-cart>span>b{font-size:13px;white-space:nowrap}
+ .mobile-floating-cart svg{flex:none}
+ .mobile-quick-scrim{
+  display:block;position:fixed;inset:0;z-index:79;
+  border:0;background:rgba(15,23,42,.58);
+  width:100vw;height:100dvh;
+ }
+ .mobile-quick-sheet{
+  display:block;position:fixed;z-index:80;
+  left:0;right:0;bottom:0;
+  max-height:min(80dvh,600px);
+  overflow-y:auto;overscroll-behavior:contain;
+  background:#fff;
+  border:1px solid #e2e8f0;border-radius:21px 21px 0 0;
+  padding:0 16px calc(20px + var(--mobile-safe-bottom));
+  box-shadow:0 -15px 55px #0f172a45;
+ }
+ .mobile-quick-sheet:before{
+  content:"";display:block;height:4px;width:48px;
+  border-radius:99px;background:#d0dce4;margin:11px auto 7px;
+ }
+ .mobile-quick-header{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:10px 2px 19px;
+ }
+ .mobile-quick-header strong{display:block;color:#17233b;font-size:18px;font-weight:850}
+ .mobile-quick-header small{display:block;color:#64748b;font-size:12px;margin-top:5px}
+ .mobile-sheet-close{
+  width:46px;height:46px;border:1px solid #e2e8f0;background:#f8fafc;
+  border-radius:11px;color:#475569;display:grid;place-items:center;flex:none;
+ }
+ .mobile-quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .mobile-quick-action{
+  display:flex;flex-direction:column;align-items:flex-start;gap:9px;
+  border:1px solid #dce7e0;background:#fff;
+  border-radius:13px;min-width:0;min-height:119px;
+  padding:13px;text-align:left;color:#23354a;
+  -webkit-tap-highlight-color:transparent;
+ }
+ .mobile-quick-action:active{background:#eff8f3}
+ .mobile-quick-icon{
+  width:36px;height:36px;border-radius:10px;background:#eaf7f0;
+  color:#087f61;display:grid;place-items:center;
+ }
+ .mobile-quick-action>span:nth-child(2){min-width:0;display:grid;gap:4px}
+ .mobile-quick-action strong{font-size:12px;line-height:1.2;overflow-wrap:anywhere}
+ .mobile-quick-action small{font-size:10.5px;line-height:1.3;color:#64748b}
+ .mobile-quick-arrow{display:none}
+ .mobile-quick-disclaimer{
+  font-size:11px;color:#64748b;line-height:1.5;margin:17px 2px 0;
+ }
+ /* Dois passos táctis no POS: mostrar produtos ou mostrar carrinho. */
+ .mobile-pos-switch{
+  position:sticky;top:0;z-index:5;
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:5px;background:#eaf1ed;
+  padding:5px;margin:0 0 15px;border-radius:12px;
+  scroll-margin-top:10px;
+ }
+ .mobile-pos-switch button{
+  min-height:50px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  border:0;border-radius:9px;background:transparent;color:#64748b;
+  font-size:13px;font-weight:850;
+ }
+ .mobile-pos-switch button.active{
+  background:#fff;color:#087f61;
+  box-shadow:0 3px 8px rgba(12,44,25,.09);
+ }
+ .mobile-tab-count{
+  min-width:20px;height:20px;padding:2px 5px;
+  background:#087f61;color:#fff;font-size:11px;
+  border-radius:10px;display:grid;place-items:center;
+ }
+ .mobile-pos-layout{display:block!important;min-width:0}
+ .mobile-pos-layout.mobile-pos-show-products>.cart-panel{display:none!important}
+ .mobile-pos-layout.mobile-pos-show-cart>.pos-catalog{display:none!important}
+ .mobile-pos-layout .cart-panel{min-height:0;border-radius:13px}
+ .mobile-pos-layout .cart-items{min-height:95px;max-height:none;overflow:visible}
+ .mobile-pos-layout .pos-search{
+  min-height:55px;padding:12px 15px;border-radius:11px;
+ }
+ .mobile-pos-layout .pos-search input{font-size:16px}
+ .mobile-pos-layout .product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .mobile-pos-layout .product-tile{min-height:192px;padding:14px 12px 52px;border-radius:12px}
+ .mobile-pos-layout .product-tile b{font-size:13px;line-height:1.35}
+ .mobile-pos-layout .product-sku{font-size:11px}
+ .mobile-pos-layout .tile-price{font-size:17px}
+ .mobile-pos-layout .product-image{min-height:70px}
+ .mobile-pos-layout .add-indicator{
+  width:35px;height:35px;display:grid;place-items:center;
+  right:11px;bottom:10px;background:#e4f4e9;color:#087f61;
+ }
+ .mobile-pos-layout .category-chip{min-height:46px;padding:11px 16px;font-size:13px}
+ .mobile-pos-layout .cart-heading{padding:17px 14px;flex-wrap:wrap}
+ .mobile-pos-layout .cart-title{font-size:15px}
+ .mobile-pos-layout .cart-item{padding:16px 0}
+ .mobile-pos-layout .cart-item-info{flex-wrap:wrap}
+ .mobile-pos-layout .cart-item-info b{font-size:13px}
+ .mobile-pos-layout .cart-item-info span{font-size:12px}
+ .mobile-pos-layout .cart-item-bottom{flex-wrap:wrap;gap:12px}
+ .mobile-pos-layout .cart-item-bottom strong{font-size:14px}
+ .mobile-pos-layout .qty-control{padding:4px;gap:12px;background:#f1f7f3}
+ .mobile-pos-layout .qty-control button{
+  width:48px;height:48px;padding:0;border:1px solid #c9dfd1;
+  border-radius:10px;color:#087f61;
+ }
+ .mobile-pos-layout .qty-control svg{width:21px;height:21px}
+ .mobile-pos-layout .qty-control span{font-size:16px;min-width:20px}
+ .mobile-pos-layout .payment-methods{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+ .mobile-pos-layout .payment-tile{min-height:70px;font-size:12px;padding:12px 6px;gap:9px}
+ .mobile-pos-layout .payment-tile svg{width:21px;height:21px}
+ .mobile-pos-layout .cart-checkout{padding:16px 14px 20px}
+ .mobile-pos-layout .checkout-btn{min-height:60px;font-size:14px;font-weight:850}
+ .mobile-pos-layout .total-line strong{font-size:24px}
+ .mobile-pos-layout .credit-checkout{margin:14px 0}
+ .mobile-pos-layout .ux-clear-cart{min-height:43px;padding:8px 12px}
+ /* Grandes áreas de toque também no resto das páginas do POS, sem alterar desktop. */
+ .ubuntu-shell .page-area :is(.primary-btn,.outline-btn,.danger-btn,.status-chip){
+  min-height:48px;font-size:max(12px,0.78rem);
+ }
+ .ubuntu-shell .page-area :is(input:not([type="checkbox"]):not([type="radio"]),select,textarea){
+  min-height:48px;
+  font-size:16px;
+ }
+ .ubuntu-shell .page-area :is(.table-scroll,.cm-scroll,.sc-scroll,.ex-table-wrap,.dg-tablewrap){
+  overflow-x:auto;-webkit-overflow-scrolling:touch;
+ }
+ .ubuntu-shell .page-area .table-scroll button{
+  min-width:42px;min-height:44px;
+ }
+ .ubuntu-shell .page-area :is(.cm-root,.sc-root,.ex-root,.dg-root) :is(.cm-primary,.cm-outline,.sc-primary,.sc-outline,.ex-primary,.ex-outline,.dg-primary,.dg-outline){
+  min-height:48px;
+ }
+ .ubuntu-shell .page-area .form-actions button{min-height:49px}
+ .ubuntu-shell .page-area .input-search{min-height:50px}
+ .ubuntu-shell .page-area .ux-product-table-options{width:100%}
+ .ubuntu-shell .page-area .ux-product-table-options select{min-height:45px}
+ .ubuntu-shell .page-area .ux-pagination .outline-btn{min-height:44px}
+ .ubuntu-shell .page-area .ux-welcome-actions :is(.primary-btn,.outline-btn){min-height:51px}
+ .ubuntu-shell .page-area .page-title-row{margin-bottom:17px}
+ .modal-card{max-height:calc(100dvh - 24px);border-radius:15px}
+ .modal-card .field :is(input,select,textarea){
+  min-height:50px;font-size:16px;
+ }
+ .modal-card .form-actions :is(button,.primary-btn,.outline-btn){min-height:51px}
+ .cm-dialog,.sc-dialog,.ex-modal,.dg-modal{max-height:calc(100dvh - 22px)}
+ .cm-dialog :is(input,select,textarea),.sc-dialog :is(input,select,textarea),.ex-modal :is(input,select,textarea),.dg-modal :is(input,select,textarea){font-size:16px;min-height:48px}
+ .cm-dialog button,.sc-dialog button,.ex-modal button,.dg-modal button{touch-action:manipulation}
+}
+@media(max-width:360px){
+ .mobile-bottom-nav{padding-inline:2px}
+ .mobile-nav-link{font-size:10px}
+ .mobile-nav-count{right:6%}
+ .mobile-pos-layout .product-tile{padding:10px 9px 49px}
+ .mobile-pos-layout .payment-methods{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .mobile-pos-layout .payment-tile{min-height:65px}
+ .mobile-quick-grid{gap:8px}
+ .mobile-quick-action{padding:11px}
+}
+@media(prefers-reduced-motion:reduce){
+ .mobile-bottom-nav *,.mobile-quick-sheet *,.mobile-floating-cart{animation:none!important;transition:none!important}
+}
+@media print{
+ .mobile-bottom-nav,.mobile-floating-cart,.mobile-pos-switch,.mobile-quick-sheet,.mobile-quick-scrim{display:none!important}
+}

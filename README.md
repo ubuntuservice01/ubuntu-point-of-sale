@@ -31,6 +31,10 @@ bun run dev
 bun run build
 ```
 
+## Experiência mobile para o comerciante
+
+Menu inferior e acções rápidas com áreas de toque maiores **apenas no telemóvel**, além do POS em duas vistas (Produtos e Carrinho). Ver [UX Mobile](docs/UX-MOBILE-2026-10-11.md).
+
 ## Revisão de UX/UI (pré-Supabase)
 
 A melhoria de navegação agrupada, dashboard com filtros, pesquisa rápida no POS e impressão de resumo demonstrativo está documentada em [Revisão UX/UI](docs/UX-REVISAO-2026-10-11.md). A interface continua clara e todas as operações são demonstrativas.
