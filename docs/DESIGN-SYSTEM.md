@@ -1,46 +1,64 @@
-# Design System Ubuntu POS 360 — Tactile Velocity
+# Ubuntu POS 360 — Design System Claro e Humano (v1.1)
 
-Referência de estilo aprovada: **tema azul-noite com acentos vivos**, cartões escuros com profundidade moderada, elevada legibilidade, hierarquia evidente e interacções discretas.
+## Objectivo
+Criar uma interface de gestão comercial que seja acolhedora, rápida, previsível, profissional e confortável de utilizar durante todo o dia. O sistema **abre em modo claro**. Não aplicamos tema escuro, faixas decorativas no topo dos cartões, brilhos ou gradientes sem função, ícones gigantes de preenchimento, nem cartões com falsos indicadores de tendência.
+
+## Inspirações de UX profissional
+- Shopify Admin e Polaris — densidade adaptada à tarefa, navegação previsível, grupos de informação, foco naquilo que o comerciante precisa de fazer.
+  - https://www.shopify.com/blog/admin-new-look
+  - https://shopify.dev/docs/apps/design/visual-design
+- Atlassian Design System — componentes consistentes, acessibilidade, padrões familiares e decisões documentadas.
+  - https://atlassian.design/get-started/about-atlassian-design-system
+- Material Design — tipografia hierárquica e cores com papéis semânticos.
+  - https://m3.material.io/
+
+As referências são **inspiração funcional**, não reproduções gráficas.
 
 ## Paleta
 
-| Papel | Cor | Código |
-| --- | --- | --- |
-| Principal / êxito | Verde esmeralda | `#10B981` |
-| Secundária / dados | Ciano | `#06B6D4` |
-| Terciária / alerta | Âmbar | `#F59E0B` |
-| Fundo e navegação | Azul-noite | `#0F172A` |
-| Cartões | Azul ardósia escuro | `#17243B` |
-| Texto primário | Branco suave | `#EDF8F5` |
-| Bordas | Cinza azulado | `#2C3B54` |
+| Papel | Cor | Valor |
+|---|---|---|
+| Fundo principal | Cinza muito claro | `#F8FAFC` |
+| Superfícies e cartões | Branco | `#FFFFFF` |
+| Texto principal | Azul-grafite | `#18212F` |
+| Texto secundário | Cinza ardósia | `#475569` |
+| Bordas | Cinza claro | `#E2E8F0` |
+| Identidade | Verde esmeralda | `#10B981` |
+| Botões primários com texto branco | Verde escuro contrastante | `#087F61` |
+| Informação | Ciano | `#06B6D4` |
+| Destaques / atenção | Âmbar | `#F59E0B` |
+| Erros | Vermelho | `#EF4444` |
 
-Não usar cor para transmitir informação sozinha. Botões verdes sobre fundo escuro usam **texto escuro**, para garantir contraste. Texto principal deve ser claro sobre superfícies escuras.
+**Regra fundamental:** cor realça uma tarefa ou estado. A estrutura dos cartões não recebe faixas coloridas decorativas. Valores de fiado vencido recebem texto legível e um estado explícito, não apenas uma cor.
 
 ## Tipografia
 
-- **Títulos:** `Space Grotesk` — títulos, números em destaque, KPIs.
-- **Texto do corpo:** `Hanken Grotesk` — menus, parágrafos, botões e formulários.
-- **Etiquetas:** `JetBrains Mono` — referências de vendas, etiquetas técnicas e códigos.
+- **Space Grotesk**: cabeçalhos e indicadores financeiros.
+- **Hanken Grotesk**: menus, conteúdos, botões, formulários e mensagens.
+- **JetBrains Mono**: referências, SKU e códigos.
+- Usar fontes de sistema como fallback; não incluir nem distribuir ficheiros de fontes.
+- Corpo: 14–16 px; tabelas: 13–14 px; títulos: 20–30 px; legendas: 12 px quando necessário.
+- Valores em MZN com números tabulares para leitura rápida.
 
-Fontes obtidas por Google Fonts com fallback para fontes locais do sistema. Não incorporar nem disponibilizar ficheiros de fontes.
+## Cartões e estruturas
+- Superfície branca, borda neutra de 1 px, raio moderado, sombra discreta.
+- Cada cartão: rótulo descritivo, número principal ou acção e contexto.
+- Não colocar barras superiores, gradientes, setas de crescimento inventadas ou ícones sem função.
+- Gráficos mostram dados reais do contexto; quando vazios, apresentam uma explicação útil.
+- Barra lateral clara e recolhível, com destaque verde suave para a secção actual.
+- Pesquisa e filtros próximos da tabela a que dizem respeito.
 
-## Princípios UX
+## Microcopy em português de Moçambique
+Preferir:
+- **Fiado e dívidas** (em vez de créditos genéricos)
+- **Saldo por pagar**, **Dívidas vencidas**, **Registar pagamento**, **Perto do limite**
+- **Produtos e stock**, **Caixa**, **Armazém**, **Registar venda**, **Utilizadores**
+- Mensagens humanas, concretas e breves: «Ainda não há vendas»; «Registe o primeiro cliente para começar».
 
-1. Foco visível para teclado e alvos tácteis confortáveis.
-2. Todos os preços em **MZN**, sem imposto presumido.
-3. Terminologia local: **fiado, dívidas, armazém, caixa, estabelecimento, utilizadores**.
-4. Um botão deve executar uma acção clara, ou comunicar que o recurso ainda não está disponível.
-5. Fluxos curtos, mensagens de erro úteis, ecrãs vazios explicativos.
-6. Modo POS optimizado para rapidez; administração para leitura de números e tabelas.
-7. Microinteracções rápidas; respeitar `prefers-reduced-motion`.
-8. Diferenciar operações de **demonstração** de funcionalidades bancárias e fiscais reais.
+## Segurança e honestidade da interface
+As operações da primeira fase são uma **demonstração local**. Evitar transmitir que existem pagamentos reais, emissão fiscal, tenant isolado, sincronização offline ou permissões que ainda não foram implementadas. Não usar dados reais de clientes.
 
-## Fiado
+## Qualidade
+Aplicar boas práticas de WCAG 2.2 AA: contraste, labels, teclado, foco visível, estados de erro textuais, tamanho adequado de áreas clicáveis, desenho responsivo, redução de movimentos. Verificar desktop, tablet e telemóvel.
 
-- Um cliente pode ter um limite opcional; limite 0 impede novo fiado.
-- Uma venda a fiado grava montante e prazo opcional.
-- Pagamentos parciais são abatidos aos movimentos mais antigos.
-- Dívidas só ficam **vencidas** se foi especificada uma data e essa data passou.
-- Histórico guarda movimentos (compra, pagamento, saldo de abertura); não apaga o livro.
-- **Atenção:** demonstração em `localStorage` não é sistema contabilístico definitivo. Migrar futuramente para operações transaccionais e políticas de autorização no Supabase.
-
+O guia por ecrã encontra-se em `docs/UX-ECRAS.md`.
