@@ -68,7 +68,7 @@ export function MobileQuickNav({section,cartCount,cartTotal,cartVisible,drawerOp
  if(!mobile||drawerOpen)return null;
  const choose=(id:QuickActionId)=>{setOpen(false);action(id)};
  return <>
-  {section==="pos"&&cartCount>0&&!cartVisible&&<button type="button" className="mobile-floating-cart" onClick={showCart} aria-label={"Ver carrinho com "+cartCount+" artigos, total "+money(cartTotal)}>
+  {section==="pos"&&cartCount>0&&!cartVisible&&<button type="button" className="mobile-floating-cart" onClick={showCart} aria-label={"Ver carrinho com "+cartCount+" "+(cartCount===1?"artigo":"artigos")+", total "+money(cartTotal)}>
    <span><ShoppingCart size={19}/><b>{cartCount} {cartCount===1?"artigo":"artigos"}</b></span>
    <span><strong>{money(cartTotal)}</strong><ArrowRight size={18}/></span>
   </button>}

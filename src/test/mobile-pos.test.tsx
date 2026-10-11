@@ -52,7 +52,7 @@ describe("Navegação de telemóvel do POS",()=>{
   expect(screen.getByRole("heading",{name:"Fiado e dívidas"})).toBeTruthy();
   fireEvent.click(screen.getByRole("button",{name:"Abrir menu"}));
   expect(screen.queryByRole("navigation",{name:"Navegação rápida móvel"})).toBeNull();
-  fireEvent.click(screen.getByRole("button",{name:"Fechar menu"}));
+  fireEvent.click(within(screen.getByRole("navigation",{name:"Navegação principal"}).closest("aside")!).getByRole("button",{name:"Fechar menu"}));
   expect(screen.getByRole("navigation",{name:"Navegação rápida móvel"})).toBeTruthy();
  });
  it("alterna Produtos/Carrinho sem perder artigos nem valores da venda",()=>{
@@ -64,14 +64,14 @@ describe("Navegação de telemóvel do POS",()=>{
   const first=document.querySelector<HTMLButtonElement>(".product-tile:not(:disabled)");
   expect(first).toBeTruthy();
   fireEvent.click(first!);
-  const showCart=screen.getByRole("button",{name:/Ver carrinho com 1 artigos, total/});
+  const showCart=screen.getByRole("button",{name:/Ver carrinho com 1 artigo, total/});
   fireEvent.click(showCart);
   expect(document.querySelector(".mobile-pos-show-cart")).toBeTruthy();
   expect(within(tabGroup).getByRole("button",{name:/Carrinho/}).getAttribute("aria-pressed")).toBe("true");
   expect(screen.getByText("1 itens")).toBeTruthy();
   fireEvent.click(within(tabGroup).getByRole("button",{name:"Produtos"}));
   expect(document.querySelector(".mobile-pos-show-products")).toBeTruthy();
-  fireEvent.click(within(bottom).getByRole("button",{name:"Vender"}));
+  fireEvent.click(within(screen.getByRole("navigation",{name:"Navegação rápida móvel"})).getByRole("button",{name:"Vender"}));
   expect(document.querySelector(".mobile-pos-show-products")).toBeTruthy();
  });
  it("Escape fecha o menu rápido e devolve o foco à opção Mais",()=>{
