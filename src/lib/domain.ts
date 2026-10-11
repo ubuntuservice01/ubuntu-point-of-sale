@@ -47,6 +47,7 @@ export const SECTIONS: {id:Section;label:string}[] = [
   {id:"farmacia",label:"Farmácias"},{id:"restaurante",label:"Restaurantes"},{id:"bar",label:"Bares"},{id:"talho",label:"Talhos"},
   {id:"producao",label:"Produção e padarias"},{id:"grossistas",label:"Grossistas"},
   {id:"catalogo",label:"Catálogo online"},{id:"encomendas-online",label:"Encomendas digitais"},{id:"entregas",label:"Entregas"},{id:"fidelizacao",label:"Fidelização"},
+  {id:"companies",label:"Empresas (demonstração)"},
   {id:"modules",label:"Módulos"},
   {id:"reports",label:"Relatórios"},{id:"finance",label:"Resumo financeiro"},{id:"settings",label:"Definições"}
 ];

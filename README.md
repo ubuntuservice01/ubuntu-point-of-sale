@@ -31,6 +31,10 @@ bun run dev
 bun run build
 ```
 
+## Auditoria do frontend
+
+Consulte [Auditoria do Frontend — Outubro de 2026](docs/AUDITORIA-FRONTEND-2026-10-11.md) para a cobertura de navegação, correcções executadas, testes de regressão e bloqueadores antes do Supabase.
+
 ## Próximas fases
 
 1. **Validar e aperfeiçoar o frontend:** fluxo visual ponta a ponta, comunicação entre módulos, permissões e acessibilidade.

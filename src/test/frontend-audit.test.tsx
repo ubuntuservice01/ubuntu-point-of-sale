@@ -18,7 +18,8 @@ vi.mock("@tanstack/react-router",async()=>{
 beforeEach(()=>{window.localStorage.clear()});
 afterEach(()=>{cleanup();window.localStorage.clear()});
 describe("Auditoria de navegação e renderização",()=>{
- it("todas as 24 secções do POS estão acessíveis e renderizam",()=>{
+ it("todas as secções do POS, incluindo empresas, estão acessíveis e renderizam",()=>{
+  expect(SECTIONS.some(s=>s.id==="companies")).toBe(true);
   render(createElement(UbuntuApp));
   const nav=screen.getByRole("navigation",{name:"Navegação principal"});
   const buttons=within(nav).getAllByRole("button");
