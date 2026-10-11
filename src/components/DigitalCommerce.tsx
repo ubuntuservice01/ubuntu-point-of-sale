@@ -1,6 +1,6 @@
 import {useEffect,useMemo,useState,type FormEvent,type ReactNode} from "react";
 import {Link} from "@tanstack/react-router";
-import {AlertTriangle,ArrowRight,BadgeCheck,CalendarClock,Check,CheckCircle2,ClipboardList,Gift,Info,MapPin,Package,Plus,Search,Settings2,ShoppingBag,Star,Store,Truck,Users,X} from "lucide-react";
+import {AlertTriangle,ArrowRight,BadgeCheck,CalendarClock,Check,CheckCircle2,ClipboardList,Gift,Info,MapPin,Package,Plus,Search,Settings2,ShoppingBag,Star,Store,Truck,Users,Wallet,X} from "lucide-react";
 import {money,type Store as StoreData,type Section,type OnlineOrder,type Courier,type Customer,type CatalogSettings,type LoyaltySettings} from "../lib/domain";
 import {listedProducts,getCatalogListing,catalogStockFree,updateCatalogSettings,setCatalogListing,advanceOnlineOrder,cancelOnlineOrder,registerCourier,toggleCourier,assignCourier,dispatchDelivery,completeOnlineOrder} from "../lib/online";
 import {loyaltyBalance,redeemLoyaltyReward,markLoyaltyRewardDelivered,updateLoyaltySettings} from "../lib/loyalty";
