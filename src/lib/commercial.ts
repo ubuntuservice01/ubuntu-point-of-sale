@@ -81,7 +81,7 @@ export function registerPurchase(s:Store,supplierId:string,items:PurchaseItem[],
  const now=new Date().toISOString();
  const entry:Purchase={id:"CMP-"+Date.now().toString(36).toUpperCase()+"-"+keyId().slice(0,4),supplierId,items:items.map(i=>({...i})),total,reference:reference.trim(),createdAt:now,paymentStatus:paid?"paga":"por_pagar",...(paid?{paymentMethod:method}:{}),...(session?{cashSessionId:session.id}:{})};
  const changes:StockMovement[]=items.map(i=>({id:keyId(),productId:i.productId,kind:"compra",change:i.qty,createdAt:now,reference:entry.id,note:"Recepção da compra "+entry.id,balanceAfter:(s.products.find(p=>p.id===i.productId)?.stock??0)+i.qty}));
- return {...s,purchases:[entry,...s.purchases],products:s.products.map(p=>{const i=items.find(x=>x.productId===p.id);return i?{...p,stock:p.stock+i.qty}:p}),stockMovements:[...changes,...s.stockMovements],audits:[{id:keyId(),createdAt:now,action:"Compra recebida",description:entry.id+" · "+supplier.name+" · "+total+" MZN"},...s.audits]};
+ return {...s,purchases:[entry,...s.purchases],products:s.products.map(p=>{const i=items.find(x=>x.productId===p.id);return i?{...p,stock:p.stock+i.qty,purchasePrice:roundMoney(i.unitCost)}:p}),stockMovements:[...changes,...s.stockMovements],audits:[{id:keyId(),createdAt:now,action:"Compra recebida",description:entry.id+" · "+supplier.name+" · "+total+" MZN"},...s.audits]};
 }
 export function registerSupplierPayment(s:Store,supplierId:string,amount:number,method:CashMethod,note:string):Store{
  assert(s.suppliers.some(x=>x.id===supplierId),"Seleccione um fornecedor válido.");

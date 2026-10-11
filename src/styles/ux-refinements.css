@@ -240,3 +240,21 @@
 @media(prefers-reduced-motion:reduce){
  .ubuntu-shell *,.ubuntu-shell *:before,.ubuntu-shell *:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}
 }
+
+/* Cadastro de produtos: preços de compra e venda claramente separados. */
+.product-pricing-fields{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;border:1px solid #e2e8f0;background:#fbfdfb;border-radius:10px;padding:14px}
+.product-pricing-fields .field{min-width:0}
+.product-pricing-preview{grid-column:1/-1;border:1px solid #cde9dc;border-radius:10px;background:#eef8f2;color:#235b43;padding:13px 15px;display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:5px 12px}
+.product-pricing-preview>span{font-size:12px;font-weight:750}
+.product-pricing-preview>strong{font-family:"Space Grotesk",sans-serif;font-size:17px;font-variant-numeric:tabular-nums;color:#087f61}
+.product-pricing-preview>small{grid-column:1/-1;font-size:11px;line-height:1.5;color:#526e5f}
+.product-pricing-preview.negative{background:#fff6f0;border-color:#f3d8bf;color:#965216}
+.product-pricing-preview.negative>strong{color:#a84b26}
+.product-pricing-preview.negative>small{color:#92602a}
+.product-price-note{grid-column:1/-1;background:#fff9e9;border:1px solid #f4dfa8;border-radius:9px;color:#805a1f;line-height:1.5;font-size:12px;padding:11px 12px;margin:0}
+.product-pricing-negative{color:#b42332;font-weight:800}
+.product-pricing-positive{color:#087f61;font-weight:750}
+@media(max-width:650px){
+ .product-pricing-fields{grid-template-columns:1fr;padding:12px}
+ .product-pricing-preview{grid-template-columns:1fr;align-items:start}
+}

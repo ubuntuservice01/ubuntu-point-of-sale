@@ -35,6 +35,10 @@ bun run build
 
 A melhoria de navegação agrupada, dashboard com filtros, pesquisa rápida no POS e impressão de resumo demonstrativo está documentada em [Revisão UX/UI](docs/UX-REVISAO-2026-10-11.md). A interface continua clara e todas as operações são demonstrativas.
 
+## Cadastro de produtos: preços de compra e de venda
+
+O cadastro de produtos passou a pedir **preço de compra** e **preço de venda** por unidade. A listagem apresenta os dois valores e a diferença bruta unitária. Consulte [Regras dos preços de produtos](docs/PRECOS-PRODUTOS.md). Os custos dos produtos antigos não são inventados.
+
 ## Auditoria do frontend
 
 Consulte [Auditoria do Frontend — Outubro de 2026](docs/AUDITORIA-FRONTEND-2026-10-11.md) para a cobertura de navegação, correcções executadas, testes de regressão e bloqueadores antes do Supabase.
