@@ -1,5 +1,6 @@
 import {useEffect,useMemo,useState,type FormEvent,type ReactNode} from "react";
 import {AlertTriangle,ArrowRight,Banknote,Building2,CalendarClock,Check,CheckCircle2,ChevronRight,ClipboardList,Download,HandCoins,History,Info,Minus,Package,Plus,Receipt,RefreshCw,Search,ShoppingBag,Store,Truck,Wallet,X} from "lucide-react";
+import {useDialogFocus} from "../lib/useDialogFocus";
 import {keyId,money,roundMoney,type Payment,type Product,type Section,type Store as CommerceStore,type Supplier,type PurchaseItem} from "../lib/domain";
 import {activeCashSession,cashSessionBalance,startCashSession,finishCashSession,registerCashMovement,registerSupplier,supplierOutstanding,registerPurchase,registerSupplierPayment,registerStockAdjustment,returnableQuantity,registerReturn,registerExpense,financialSummary} from "../lib/commercial";
 
@@ -27,8 +28,8 @@ function Field({title,children,note}:{title:string;children:ReactNode;note?:stri
  return <label className="cm-field"><span>{title}</span>{children}{note&&<small>{note}</small>}</label>;
 }
 function DemoDialog({title,onClose,children,wide=false,error}:{title:string;onClose:()=>void;children:ReactNode;wide?:boolean;error?:string|undefined}){
- useEffect(()=>{const f=(e:KeyboardEvent)=>{if(e.key==="Escape")onClose()};window.addEventListener("keydown",f);return()=>window.removeEventListener("keydown",f)},[onClose]);
- return <div className="cm-backdrop" onMouseDown={e=>{if(e.currentTarget===e.target)onClose()}}><section className={"cm-dialog "+(wide?"wide":"")} role="dialog" aria-modal="true" aria-label={title}><header><h2>{title}</h2><button aria-label="Fechar" onClick={onClose}><X size={20}/></button></header><div className="cm-dialog-body">{error&&<div role="alert" className="cm-form-error"><AlertTriangle size={16}/>{error}</div>}{children}</div></section></div>;
+ const dialogRef=useDialogFocus<HTMLElement>(onClose);
+ return <div className="cm-backdrop" onMouseDown={e=>{if(e.currentTarget===e.target)onClose()}}><section ref={dialogRef} tabIndex={-1} className={"cm-dialog "+(wide?"wide":"")} role="dialog" aria-modal="true" aria-label={title}><header><h2>{title}</h2><button aria-label="Fechar" onClick={onClose}><X size={20}/></button></header><div className="cm-dialog-body">{error&&<div role="alert" className="cm-form-error"><AlertTriangle size={16}/>{error}</div>}{children}</div></section></div>;
 }
 function PayMethod({value,onChange,withoutCash=false}:{value:CashMethod;onChange:(m:CashMethod)=>void;withoutCash?:boolean}){
  return <Field title="Forma de pagamento (demonstração)"><select value={value} onChange={e=>onChange(e.target.value as CashMethod)}>{methods.filter(m=>!withoutCash||m!=="dinheiro").map(m=><option key={m} value={m}>{methodName[m]}</option>)}</select></Field>;

@@ -1,5 +1,6 @@
 import {useEffect,useMemo,useState,type FormEvent,type ReactNode} from "react";
 import {AlertTriangle,ArrowRight,Beef,CalendarClock,Check,CheckCircle2,ChefHat,ClipboardList,Clock,GlassWater,Info,Layers,Minus,Package,Plus,Receipt,Search,ShieldAlert,ShoppingBag,Store,Table2,Trash2,Wallet,X} from "lucide-react";
+import {useDialogFocus} from "../lib/useDialogFocus";
 import {money,type Payment,type Product,type Section,type Store as StoreData,type ServiceArea,type ServiceOrder} from "../lib/domain";
 import {availablePharmaLots,nearExpiry,registerPharmaLot,registerPharmaDispense,registerServiceTable,startServiceOrder,addServiceOrderItem,removeServiceOrderItem,advanceServiceOrder,cancelServiceOrder,finishServiceOrder,serviceOrderTotal,serviceActiveOrders,registerButcherBatch,registerWeightedSale,three,reservedQty} from "../lib/sectors";
 
@@ -27,8 +28,8 @@ function Empty({icon:Icon,title,description,action}:{icon:typeof Package;title:s
  return <div className="sc-empty"><span><Icon size={25}/></span><h3>{title}</h3><p>{description}</p>{action}</div>;
 }
 function Modal({title,children,onClose,error,wide=false}:{title:string;children:ReactNode;onClose:()=>void;error?:string|undefined;wide?:boolean}){
- useEffect(()=>{const listener=(e:KeyboardEvent)=>{if(e.key==="Escape")onClose()};window.addEventListener("keydown",listener);return()=>window.removeEventListener("keydown",listener)},[onClose]);
- return <div className="sc-mask" onMouseDown={e=>{if(e.currentTarget===e.target)onClose()}}><div className={"sc-dialog "+(wide?"wide":"")} role="dialog" aria-modal="true" aria-label={title}><div className="sc-dialog-head"><h2>{title}</h2><button aria-label="Fechar" onClick={onClose}><X size={20}/></button></div><div className="sc-dialog-body">{error&&<div className="sc-error" role="alert"><AlertTriangle size={17}/>{error}</div>}{children}</div></div></div>;
+ const dialogRef=useDialogFocus<HTMLElement>(onClose);
+ return <div className="sc-mask" onMouseDown={e=>{if(e.currentTarget===e.target)onClose()}}><div ref={dialogRef} tabIndex={-1} className={"sc-dialog "+(wide?"wide":"")} role="dialog" aria-modal="true" aria-label={title}><div className="sc-dialog-head"><h2>{title}</h2><button aria-label="Fechar" onClick={onClose}><X size={20}/></button></div><div className="sc-dialog-body">{error&&<div className="sc-error" role="alert"><AlertTriangle size={17}/>{error}</div>}{children}</div></div></div>;
 }
 function Method({value,onChange}:{value:PayMethod;onChange:(method:PayMethod)=>void}){
  return <Field label="Pagamento demonstrativo"><select value={value} onChange={e=>onChange(e.target.value as PayMethod)}>{(Object.keys(paymentLabel) as PayMethod[]).map(p=><option key={p} value={p}>{paymentLabel[p]}</option>)}</select></Field>;

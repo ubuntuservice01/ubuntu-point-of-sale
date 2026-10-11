@@ -1,6 +1,7 @@
 import {useEffect,useMemo,useState,type FormEvent,type ReactNode} from "react";
 import {Link} from "@tanstack/react-router";
 import {AlertTriangle,ArrowRight,BadgeCheck,CalendarClock,Check,CheckCircle2,ClipboardList,Gift,Info,MapPin,Package,Plus,Search,Settings2,ShoppingBag,Star,Store,Truck,Users,Wallet,X} from "lucide-react";
+import {useDialogFocus} from "../lib/useDialogFocus";
 import {money,type Store as StoreData,type Section,type OnlineOrder,type Courier,type Customer,type CatalogSettings,type LoyaltySettings} from "../lib/domain";
 import {listedProducts,getCatalogListing,catalogStockFree,updateCatalogSettings,setCatalogListing,advanceOnlineOrder,cancelOnlineOrder,registerCourier,toggleCourier,assignCourier,dispatchDelivery,completeOnlineOrder} from "../lib/online";
 import {loyaltyBalance,redeemLoyaltyReward,markLoyaltyRewardDelivered,updateLoyaltySettings} from "../lib/loyalty";
@@ -16,7 +17,7 @@ function Notice({children,warn=false}:{children:ReactNode;warn?:boolean}){return
 function Kpi({label,value,foot,icon:Icon}:{label:string;value:string;foot:string;icon:typeof Store}){return <article className="dg-kpi"><div><span>{label}</span><i><Icon size={19}/></i></div><strong>{value}</strong><small>{foot}</small></article>}
 function Field({title,children}:{title:string;children:ReactNode}){return <label className="dg-field"><b>{title}</b>{children}</label>}
 function Blank({icon:Icon,title,detail,action}:{icon:typeof Store;title:string;detail:string;action?:ReactNode}){return <div className="dg-blank"><span><Icon size={25}/></span><h3>{title}</h3><p>{detail}</p>{action}</div>}
-function Modal({title,onClose,error,children}:{title:string;onClose:()=>void;error:string;children:ReactNode}){useEffect(()=>{const f=(e:KeyboardEvent)=>{if(e.key==="Escape")onClose()};window.addEventListener("keydown",f);return()=>window.removeEventListener("keydown",f)},[onClose]);return <div className="dg-mask" onMouseDown={e=>{if(e.currentTarget===e.target)onClose()}}><section className="dg-modal" role="dialog" aria-modal="true" aria-label={title}><header><h2>{title}</h2><button onClick={onClose} aria-label="Fechar"><X size={18}/></button></header><div className="dg-modal-body">{error&&<p role="alert" className="dg-error"><AlertTriangle size={16}/>{error}</p>}{children}</div></section></div>}
+function Modal({title,onClose,error,children}:{title:string;onClose:()=>void;error:string;children:ReactNode}){const dialogRef=useDialogFocus<HTMLElement>(onClose);return <div className="dg-mask" onMouseDown={e=>{if(e.currentTarget===e.target)onClose()}}><section ref={dialogRef} tabIndex={-1} className="dg-modal" role="dialog" aria-modal="true" aria-label={title}><header><h2>{title}</h2><button onClick={onClose} aria-label="Fechar"><X size={18}/></button></header><div className="dg-modal-body">{error&&<p role="alert" className="dg-error"><AlertTriangle size={16}/>{error}</p>}{children}</div></section></div>}
 export function DigitalCommerce({section,data,onChange,notify,go}:Props){
  const [settings,setSettings]=useState<CatalogSettings>({...data.catalogSettings});
  const [loyalty,setLoyalty]=useState<LoyaltySettings>({...data.loyaltySettings});

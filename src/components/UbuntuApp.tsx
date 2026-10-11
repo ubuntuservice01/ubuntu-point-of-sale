@@ -10,6 +10,7 @@ import {ExpansionOperations} from "./ExpansionOperations";
 import {DigitalCommerce} from "./DigitalCommerce";
 import {awardLoyaltyForSale,awardLoyaltyForCreditPayment} from "../lib/loyalty";
 import {CommercialOperations} from "./CommercialOperations";
+import {useDialogFocus} from "../lib/useDialogFocus";
 import {NAV_GROUPS,navGroupFor,sectionLabel,type NavGroupId} from "../lib/ux";
 import {DashboardOverview} from "./DashboardOverview";
 import {CircleDollarSign,Truck,ShoppingBag,RefreshCw,ArrowLeftRight,BookOpen,HandCoins as HandCoinsIcon,Pill,ChefHat,GlassWater,Beef,Factory,PackageCheck,Gift,MapPin,Globe2} from "lucide-react";
@@ -23,26 +24,8 @@ const paymentText:Record<Payment,string>={dinheiro:"Dinheiro",mpesa:"M-Pesa",emo
 function IconButton({children,onClick,label,className=""}:{children:ReactNode;onClick:()=>void;label:string;className?:string}){return <button type="button" className={"icon-btn "+className} onClick={onClick} aria-label={label} title={label}>{children}</button>;}
 function Empty({icon:Icon,title,description,action}:{icon:typeof Package;title:string;description:string;action?:ReactNode}){return <div className="empty-state"><span className="empty-icon"><Icon size={30}/></span><h3>{title}</h3><p>{description}</p>{action}</div>;}
 function Modal({title,children,onClose,width="normal"}:{title:string;children:ReactNode;onClose:()=>void;width?:"normal"|"large"}){
- const dialogRef=useRef<HTMLElement|null>(null),closeRef=useRef(onClose);
- closeRef.current=onClose;
- useEffect(()=>{
-  const previous=document.activeElement instanceof HTMLElement?document.activeElement:null;
-  const root=dialogRef.current;
-  const focusables=()=>[...root?.querySelectorAll<HTMLElement>('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')??[]];
-  (focusables()[0]??root)?.focus();
-  const keys=(e:KeyboardEvent)=>{
-   if(e.key==="Escape"){e.preventDefault();closeRef.current();return}
-   if(e.key!=="Tab")return;
-   const available=focusables();
-   if(!available.length){e.preventDefault();root?.focus();return}
-   const first=available[0]!,last=available[available.length-1]!;
-   if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}
-   else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
-  };
-  window.addEventListener("keydown",keys);
-  return()=>{window.removeEventListener("keydown",keys);previous?.focus()};
- },[]);
- return <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)closeRef.current()}}><section ref={dialogRef} tabIndex={-1} className={"modal-card "+(width==="large"?"modal-large":"")} role="dialog" aria-modal="true" aria-label={title}><header className="modal-header"><h2>{title}</h2><IconButton label="Fechar janela" onClick={()=>closeRef.current()}><X size={19}/></IconButton></header><div className="modal-content">{children}</div></section></div>;
+ const dialogRef=useDialogFocus<HTMLElement>(onClose);
+ return <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}><section ref={dialogRef} tabIndex={-1} className={"modal-card "+(width==="large"?"modal-large":"")} role="dialog" aria-modal="true" aria-label={title}><header className="modal-header"><h2>{title}</h2><IconButton label="Fechar janela" onClick={onClose}><X size={19}/></IconButton></header><div className="modal-content">{children}</div></section></div>;
 }
 function Kpi({label,value,icon:Icon,tone,extra}:{label:string;value:string;icon:typeof Package;tone:string;extra:string}){return <article className={"kpi kpi-"+tone}><div className="kpi-heading"><span className="kpi-symbol"><Icon size={19}/></span><span className="kpi-label">{label}</span></div><strong className="kpi-value">{value}</strong><span className="kpi-extra">{extra}</span></article>;}
 function DemoBadge(){return <span className="demo-pill"><span className="demo-dot"/> Ambiente de demonstração</span>;}

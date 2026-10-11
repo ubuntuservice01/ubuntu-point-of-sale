@@ -45,7 +45,7 @@ Esta etapa respeita o documento de instruções de UX/UI fornecido pelo respons�
 
 ## Pendências antes de integrar Supabase
 1. **QA visual real** em Chrome 1366×768, 1920×1080, tablet 768×1024 e telemóveis 360×800 e 390×844. Não houve navegação física ou captura de ecrãs nesta sessão.
-2. Tornar consistentes os diálogos e a gestão de foco dos módulos externos ao UbuntuApp (comercial, sectorial, produção e digital).
+2. O foco dos diálogos POS, Comercial, Sectorial, Produção, Digital, Super Admin e Empresa foi uniformizado no hook `useDialogFocus`. Falta confirmar leitores de ecrã e outros casos especiais em navegador real.
 3. Validar com operadores o fluxo de impressão, scanners, teclados virtuais, responsividade e grandes volumes de dados.
 4. Incluir descontos com regras e perfis **apenas depois de existir autorização real**, em vez de simular controlo de permissões no browser.
 5. Definir controlo de acesso real aos painéis Super Admin / Empresa, RLS, tenancy, filiais, transacções, fiscalidade, dados pessoais e integrações de pagamentos.

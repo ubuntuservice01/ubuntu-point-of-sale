@@ -7,6 +7,7 @@ import {
  RefreshCw,Search,Settings,ShieldCheck,SlidersHorizontal,Store,Users,
  Wallet,X,AlertTriangle,Edit3,PlayCircle,Receipt,Info,Filter,
 } from "lucide-react";
+import {useDialogFocus} from "../lib/useDialogFocus";
 import {money,keyId} from "../lib/domain";
 import {
  ADMIN_KEY,ADMIN_SCREENS,ADMIN_SECTORS,MODULE_CATALOG,
@@ -40,9 +41,9 @@ function EmptyState({icon:Icon,title,body,action}:{icon:typeof Building2;title:s
  return <div className="sa-empty"><div className="sa-empty-icon"><Icon size={23}/></div><h3>{title}</h3><p>{body}</p>{action}</div>;
 }
 function DialogBox({title,onClose,children,wide=false}:{title:string;onClose:()=>void;children:ReactNode;wide?:boolean}){
- useEffect(()=>{const onKey=(event:KeyboardEvent)=>{if(event.key==="Escape")onClose()};window.addEventListener("keydown",onKey);return()=>window.removeEventListener("keydown",onKey)},[onClose]);
+ const dialogRef=useDialogFocus<HTMLElement>(onClose);
  return <div className="sa-modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}>
-  <div className={"sa-modal "+(wide?"wide":"")} role="dialog" aria-modal="true" aria-label={title}>
+  <div ref={dialogRef} tabIndex={-1} className={"sa-modal "+(wide?"wide":"")} role="dialog" aria-modal="true" aria-label={title}>
    <div className="sa-modal-head"><h2>{title}</h2><button aria-label="Fechar" className="sa-icon-btn" onClick={onClose}><X size={19}/></button></div>
    <div className="sa-modal-body">{children}</div>
   </div>

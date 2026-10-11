@@ -1,5 +1,6 @@
 import {useEffect,useMemo,useState,type FormEvent,type ReactNode} from "react";
 import {ArrowRight,AlertTriangle,CalendarDays,Check,ChevronRight,ClipboardList,Factory,FileText,Info,Layers,Minus,Package,Plus,Search,ShoppingBag,Store,Truck,Users,Wallet,X} from "lucide-react";
+import {useDialogFocus} from "../lib/useDialogFocus";
 import {money,type Product,type Section,type Store as StoreData,type ProductionRecipe,type WholesaleOrder,type WholesaleTier,type Payment} from "../lib/domain";
 import {
  validQuantity,qty3,lastPurchaseCost,recipeCostEstimate,freeQuantity,
@@ -35,8 +36,8 @@ function Empty({icon:Icon,title,description,action}:{icon:typeof Package;title:s
  return <div className="ex-empty"><span><Icon size={25}/></span><h3>{title}</h3><p>{description}</p>{action}</div>;
 }
 function Modal({title,error,onClose,children,wide=false}:{title:string;error?:string|undefined;onClose:()=>void;children:ReactNode;wide?:boolean}){
- useEffect(()=>{const onKey=(e:KeyboardEvent)=>{if(e.key==="Escape")onClose()};window.addEventListener("keydown",onKey);return()=>window.removeEventListener("keydown",onKey)},[onClose]);
- return <div className="ex-modal-overlay" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}><section className={"ex-modal "+(wide?"wide":"")} role="dialog" aria-modal="true" aria-label={title}><header><h2>{title}</h2><button aria-label="Fechar" onClick={onClose}><X size={19}/></button></header><div className="ex-modal-body">{error&&<div className="ex-form-error" role="alert"><AlertTriangle size={18}/>{error}</div>}{children}</div></section></div>;
+ const dialogRef=useDialogFocus<HTMLElement>(onClose);
+ return <div className="ex-modal-overlay" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}><section ref={dialogRef} tabIndex={-1} className={"ex-modal "+(wide?"wide":"")} role="dialog" aria-modal="true" aria-label={title}><header><h2>{title}</h2><button aria-label="Fechar" onClick={onClose}><X size={19}/></button></header><div className="ex-modal-body">{error&&<div className="ex-form-error" role="alert"><AlertTriangle size={18}/>{error}</div>}{children}</div></section></div>;
 }
 function Notice({warning=false,children}:{warning?:boolean;children:ReactNode}){
  return <div className={"ex-notice "+(warning?"warning":"")}><Info size={18}/><p>{children}</p></div>;
