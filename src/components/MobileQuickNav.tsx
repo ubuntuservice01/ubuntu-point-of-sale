@@ -74,7 +74,7 @@ export function MobileQuickNav({section,cartCount,cartTotal,cartVisible,drawerOp
   </button>}
   <nav className="mobile-bottom-nav" aria-label="Navegação rápida móvel">
    {MOBILE_NAV_ITEMS.map(item=><button type="button" key={item.id} className={"mobile-nav-link "+(section===item.id?"is-current":"")}
-     aria-current={section===item.id?"page":undefined} onClick={()=>navigate(item.id)}>
+     aria-current={section===item.id?"page":undefined} aria-label={item.id==="pos"&&cartCount>0?"Vender — "+cartCount+" "+(cartCount===1?"artigo":"artigos")+" no carrinho":item.label} onClick={()=>navigate(item.id)}>
     <item.icon size={22} strokeWidth={section===item.id?2.5:2}/>
     <span>{item.label}</span>{item.id==="pos"&&cartCount>0&&<small className="mobile-nav-count">{cartCount}</small>}
    </button>)}

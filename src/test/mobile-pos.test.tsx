@@ -71,7 +71,7 @@ describe("Navegação de telemóvel do POS",()=>{
   expect(screen.getByText("1 itens")).toBeTruthy();
   fireEvent.click(within(tabGroup).getByRole("button",{name:"Produtos"}));
   expect(document.querySelector(".mobile-pos-show-products")).toBeTruthy();
-  fireEvent.click(within(screen.getByRole("navigation",{name:"Navegação rápida móvel"})).getByRole("button",{name:"Vender"}));
+  fireEvent.click(within(screen.getByRole("navigation",{name:"Navegação rápida móvel"})).getByRole("button",{name:/^Vender/}));
   expect(document.querySelector(".mobile-pos-show-products")).toBeTruthy();
  });
  it("Escape fecha o menu rápido e devolve o foco à opção Mais",()=>{
