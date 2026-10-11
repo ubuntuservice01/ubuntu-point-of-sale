@@ -66,3 +66,14 @@ describe("Modo Caixa Rápido — funções do teclado e validação",()=>{
   expect(cart.reduce((sum,p)=>sum+p.price*p.qty,0)).toBe(250);
  });
 });
+
+describe("Valor recebido persistido (sem duplicar receita)",()=>{
+ it("a diferença entre valor recebido e total é o troco, não uma segunda venda",()=>{
+  const result=quickCashChange("1000",750);
+  expect(result).toEqual({valid:true,received:1000,change:250,reason:null});
+  expect(quickCashChange("750",750).change).toBe(0);
+  expect(quickCashChange("100",750).valid).toBe(false);
+  expect(quickCashChange("-1",750).valid).toBe(false);
+  expect(quickCashChange("1000.005",750).valid).toBe(false);
+ });
+});

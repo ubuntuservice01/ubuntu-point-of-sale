@@ -53,3 +53,21 @@ Os lançamentos continuam no armazenamento local da demonstração, com a fila d
 
 ## Limitações de validação física
 É necessário testar em navegador e dispositivos reais, sobretudo num balcão Windows com leitor USB, monitor táctil, impressora térmica e numa ligação offline. Não foi implementado controlo de operador por palavra-passe ou PIN, processamento de pagamentos reais, gaveta de dinheiro nem impressão silenciosa.
+
+## Melhoria adicional — guardar dinheiro recebido e troco nas vendas (11/10/2026)
+
+O valor recebido deixou de ser apenas um cálculo efémero: agora também fica associado à venda de dinheiro, juntamente com o troco calculado.
+
+### Utilização no POS normal e Caixa Rápido
+- Se escolher **Dinheiro**, deve registar o montante entregue pelo cliente na caixa **Valor recebido** ou no teclado do Caixa Rápido. Há botão **Valor exacto** para pagamentos sem troco.
+- O POS não permite concluir vendas em dinheiro quando o caixa está fechado, o valor recebido é inválido ou é insuficiente.
+- O sistema calcula `troco = valor recebido − total da venda`, com arredondamento em MZN a duas casas decimais.
+- Ao guardar a venda, as propriedades opcionais `cashReceived` e `cashChange` são gravadas no mesmo registo `Sale`, com os valores do instante da operação.
+- O **Histórico de vendas** inclui agora colunas **Valor recebido** e **Troco**.
+- O **comprovativo térmico 58/80 mm**, incluindo reimpressões de vendas guardadas, apresenta **Dinheiro recebido** e **Troco calculado**.
+- Vendas antigas sem valores históricos não recebem um troco artificial. Pagamentos por M-Pesa, e-Mola, cartão ou fiado não possuem esses campos.
+- **O saldo contabilístico do caixa é aumentado apenas pelo valor total da venda**. Não acrescentar o montante recebido separadamente, porque o troco devolvido já faz parte da mesma operação.
+- Estes valores são introduzidos pelo operador e não confirmam recebimento efectivo em dinheiro. A solução continua demonstrativa, não fiscal, sem Supabase.
+
+### Testes automatizados
+Validação de dinheiro insuficiente, cálculo exacto do troco, persistência da venda, comprovativo 58/80 mm, reimpressão, histórico legado, pagamentos por outros métodos e saldo do caixa sem dupla contagem.

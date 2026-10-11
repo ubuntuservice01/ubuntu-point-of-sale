@@ -1,6 +1,6 @@
 import {afterEach,beforeEach,describe,expect,it,vi} from "vitest";
 import {act,cleanup,fireEvent,render,screen,waitFor,within} from "@testing-library/react";
-import {createElement} from "react";
+import {createElement,useState} from "react";
 import {UbuntuApp} from "../components/UbuntuApp";
 import {QuickCash,type QuickCashProps} from "../components/QuickCash";
 import {initialStore,type CartItem,type Product} from "../lib/domain";
@@ -16,13 +16,17 @@ const setup=(override:Partial<QuickCashProps>={})=>{
  const mocks={checkout:vi.fn(),delta:vi.fn(),exact:vi.fn(),clear:vi.fn(),payment:vi.fn(),openCash:vi.fn(),camera:vi.fn(),newCustomer:vi.fn()};
  const props:QuickCashProps={
   products:[product],cart:[item],payment:"dinheiro",customers:[],
-  customerId:"",creditDueDate:"",total:250,cashOpen:true,disabled:false,
+  customerId:"",creditDueDate:"",total:250,cashEntry:"",onCashEntry:vi.fn(),cashOpen:true,disabled:false,
   reserved:()=>0,controlledByLot:()=>false,onAdd:()=>true,onScan:()=>true,onCamera:mocks.camera,
   onQtyDelta:mocks.delta,onQtyExact:mocks.exact,onRemove:vi.fn(),onClear:mocks.clear,
   onPayment:mocks.payment,onCustomer:vi.fn(),onDueDate:vi.fn(),onCheckout:mocks.checkout,
   onOpenCash:mocks.openCash,onNewCustomer:mocks.newCustomer,...override
  };
- render(createElement(QuickCash,props));
+ function CashHarness(){
+  const [value,setValue]=useState("");
+  return createElement(QuickCash,{...props,cashEntry:value,onCashEntry:setValue});
+ }
+ render(createElement(CashHarness));
  const root=screen.getByRole("region",{name:"Modo Caixa Rápido"});
  return {root,mocks};
 };

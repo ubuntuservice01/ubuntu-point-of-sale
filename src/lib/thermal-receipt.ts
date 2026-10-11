@@ -34,6 +34,19 @@ export function sanitizeThermalSettings(value:unknown):ThermalReceiptSettings{
   logoDataUrl:validReceiptLogo(x.logoDataUrl)?x.logoDataUrl:""
  };
 }
+/** Cash tender is a record of the operator's declared amount, not a real payment confirmation.
+ * Legacy and non-cash sales do not get fabricated amounts.
+ * An inconsistent legacy record is treated as unavailable rather than printed as fact.
+ */
+export function cashTenderDetails(sale:Sale):{received:number;change:number}|null{
+ if(sale.method!=="dinheiro"||typeof sale.cashReceived!=="number"||
+    typeof sale.cashChange!=="number"||!Number.isFinite(sale.cashReceived)||
+    !Number.isFinite(sale.cashChange)||!Number.isFinite(sale.total)||
+    sale.cashReceived<sale.total||sale.cashChange<0)return null;
+ const received=roundMoney(sale.cashReceived),change=roundMoney(sale.cashChange);
+ if(Math.abs(roundMoney(received-sale.total)-change)>0.000001)return null;
+ return {received,change};
+}
 export const thermalQrPayload=(sale:Sale)=>"UBUNTU-POS360-DEMO:"+sale.id;
 export function receiptDetails(sale:Sale,store:Store){
  const subtotal=roundMoney(sale.items.reduce((sum,i)=>sum+i.qty*i.price,0));
@@ -44,7 +57,7 @@ export function receiptDetails(sale:Sale,store:Store){
  const method:{[key:string]:string}={dinheiro:"Dinheiro",mpesa:"M-Pesa",emola:"e-Mola",cartao:"Cartão",fiado:"Fiado / crédito"};
  const source:{[key:string]:string}={pos:"Balcão",farmacia:"Farmácia",restaurante:"Restaurante",bar:"Bar",talho:"Talho",grossistas:"Grossistas",online:"Loja online"};
  return {
-  subtotal,deliveryFee,adjustments,total:roundMoney(sale.total),count,
+  subtotal,deliveryFee,adjustments,total:roundMoney(sale.total),count,cashTender:cashTenderDetails(sale),
   customerName:customer?.name??(sale.customerId?"Cliente registado":null),
   method:method[sale.method]??sale.method,
   source:source[sale.source??"pos"]??"Venda",

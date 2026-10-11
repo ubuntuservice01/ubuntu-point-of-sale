@@ -1,6 +1,6 @@
 import {describe,expect,it} from "vitest";
 import {qrMatrix,qrPath,THERMAL_QR_SIZE,THERMAL_QR_MAX_BYTES} from "./thermal-qr";
-import {defaultThermalReceiptSettings,receiptAmount,receiptDetails,receiptQuantity,receiptTimestamp,sanitizeThermalSettings,thermalQrPayload,validReceiptLogo} from "./thermal-receipt";
+import {defaultThermalReceiptSettings,cashTenderDetails,receiptAmount,receiptDetails,receiptQuantity,receiptTimestamp,sanitizeThermalSettings,thermalQrPayload,validReceiptLogo} from "./thermal-receipt";
 import {initialStore,safeStore,type Sale} from "./domain";
 const example:Sale={id:"VD-TEST-001",createdAt:"2026-10-11T10:00:00Z",items:[
  {productId:"p1",name:"Arroz 5 kg",qty:2,price:125},
@@ -36,6 +36,14 @@ describe("Comprovativos térmicos não fiscais",()=>{
   expect(details.deliveryFee).toBe(20);
   expect(details.adjustments).toBe(40);
   expect(details.total).toBe(350);
+ });
+ it("preserva a verdade das vendas antigas e dos meios não monetários",()=>{
+  expect(cashTenderDetails({...example,method:"dinheiro"})).toBeNull();
+  expect(cashTenderDetails({...example,cashReceived:1000,cashChange:670})).toBeNull();
+  expect(cashTenderDetails({...example,method:"dinheiro",cashReceived:1000,cashChange:670})).toEqual({received:1000,change:670});
+  expect(cashTenderDetails({...example,method:"dinheiro",cashReceived:1000,cashChange:100})).toBeNull();
+  expect(cashTenderDetails({...example,method:"dinheiro",cashReceived:200,cashChange:0})).toBeNull();
+  expect(cashTenderDetails({...example,method:"fiado",cashReceived:1000,cashChange:670})).toBeNull();
  });
  it("não envia dados de clientes no QR, que codifica apenas uma referência demonstrativa",()=>{
   const text=thermalQrPayload({...example,customerId:"cliente-privado"});

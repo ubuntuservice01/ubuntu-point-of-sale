@@ -141,3 +141,18 @@
 }
 @media(prefers-reduced-motion:reduce){.qc-root *{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 @media print{.qc-root,.qc-toggle,.qc-mobile-goto-sale{display:none!important}}
+
+/* Entrada de dinheiro e troco no POS normal, alinhada ao modo Caixa Rápido. */
+.pos-cash-tender{display:grid;gap:10px;padding:13px;background:#f4faf6;border:1px solid #c5e2d1;border-radius:10px;margin-top:11px}
+.pos-cash-tender-heading{display:flex;align-items:center;gap:8px;color:#087f61;font-size:12px}
+.pos-cash-tender-row{display:flex;align-items:end;gap:9px}
+.pos-cash-tender-row>.field{min-width:0;flex:1}
+.pos-cash-tender-row input{width:100%;min-height:47px;font-size:16px}
+.pos-cash-exact{min-height:47px;flex:none;padding:9px 12px;border:1px solid #aed7bf;border-radius:8px;background:#fff;color:#087f61;font-size:11px;font-weight:850}
+.pos-cash-change{display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid #d5e9dc;padding-top:9px;font-size:12px;color:#526773}
+.pos-cash-change strong{font:800 20px "Space Grotesk",system-ui,sans-serif;color:#087f61;font-variant-numeric:tabular-nums}
+.thermal-tender{font-weight:750}
+@media(max-width:650px){
+ .pos-cash-tender-row{flex-direction:column;align-items:stretch}
+ .pos-cash-exact{min-height:52px}
+}

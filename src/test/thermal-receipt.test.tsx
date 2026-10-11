@@ -21,6 +21,21 @@ describe("Experiência de impressão térmica",()=>{
   expect(within(receipt).getByRole("img",{name:/QR Code/})).toBeTruthy();
   expect(within(receipt).queryByText(/NUIT informado/)).toBeNull();
  });
+ it("mostra valor recebido e troco congelados no comprovativo de dinheiro",()=>{
+  const sale={...mkSale("dinheiro"),cashReceived:1000,cashChange:230};
+  render(createElement(ThermalReceiptPreview,{sale,store:mkStore(),paper:"58mm"}));
+  const receipt=screen.getByRole("region",{name:"Comprovativo não fiscal VD-DM-005"});
+  expect(within(receipt).getByText("Dinheiro recebido")).toBeTruthy();
+  expect(within(receipt).getByText("Troco calculado")).toBeTruthy();
+  expect(within(receipt).getByText("1 000,00 MZN")).toBeTruthy();
+  expect(within(receipt).getByText("230,00 MZN")).toBeTruthy();
+ });
+ it("não inventa valor recebido em vendas antigas ou com outros meios",()=>{
+  const {rerender}=render(createElement(ThermalReceiptPreview,{sale:mkSale("dinheiro"),store:mkStore(),paper:"80mm"}));
+  expect(screen.queryByText("Dinheiro recebido")).toBeNull();
+  rerender(createElement(ThermalReceiptPreview,{sale:{...mkSale("mpesa"),cashReceived:900,cashChange:130},store:mkStore(),paper:"80mm"}));
+  expect(screen.queryByText("Dinheiro recebido")).toBeNull();
+ });
  it("uma venda a fiado avisa que não é um pagamento recebido",()=>{
   render(createElement(ThermalReceiptPreview,{sale:mkSale("fiado"),store:mkStore(),paper:"80mm"}));
   expect(screen.getByText(/VENDA A FIADO/)).toBeTruthy();

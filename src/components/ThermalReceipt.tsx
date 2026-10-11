@@ -41,6 +41,8 @@ export function ThermalReceiptPreview({sale,store,paper}:{sale:Sale;store:Store;
    {details.deliveryFee!==0&&<div><span>Entrega</span><strong>{receiptAmount(details.deliveryFee)} MZN</strong></div>}
    {details.adjustments!==0&&<div><span>Ajustes da venda</span><strong>{receiptAmount(details.adjustments)} MZN</strong></div>}
    <div className="thermal-total"><span>TOTAL</span><strong>{receiptAmount(details.total)} MZN</strong></div>
+   {details.cashTender&&<div className="thermal-tender"><span>Dinheiro recebido</span><strong>{receiptAmount(details.cashTender.received)} MZN</strong></div>}
+   {details.cashTender&&<div className="thermal-tender"><span>Troco calculado</span><strong>{receiptAmount(details.cashTender.change)} MZN</strong></div>}
   </div>
   {details.unpaid&&<div className="thermal-credit-note">VENDA A FIADO — não representa valor já recebido.</div>}
   {qr&&<div className="thermal-receipt-qr"><svg width={paper==="58mm"?98:118} height={paper==="58mm"?98:118} viewBox="0 0 41 41" role="img" aria-label="QR Code com a referência de demonstração" shapeRendering="crispEdges"><rect x="0" y="0" width="41" height="41" fill="#fff"/><path transform="translate(4 4)" d={qr} fill="#000"/></svg><span>QR da referência</span><small>Não valida pagamento nem autenticidade fiscal</small></div>}

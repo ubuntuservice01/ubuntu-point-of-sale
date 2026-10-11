@@ -9,7 +9,7 @@ import {findProductByScan} from "../lib/barcodes";
 
 export type QuickCashProps={
  products:Product[];cart:CartItem[];payment:Payment;customers:Customer[];
- customerId:string;creditDueDate:string;total:number;cashOpen:boolean;disabled:boolean;
+ customerId:string;creditDueDate:string;total:number;cashEntry:string;onCashEntry:(value:string)=>void;cashOpen:boolean;disabled:boolean;
  reserved:(id:string)=>number;controlledByLot:(id:string)=>boolean;
  onAdd:(product:Product)=>boolean;onScan:(code:string)=>boolean;onCamera:()=>void;
  onQtyDelta:(id:string,delta:number)=>void;onQtyExact:(id:string,quantity:number)=>void;
@@ -27,7 +27,7 @@ function isFormTarget(target:EventTarget|null){
 }
 export function QuickCash(props:QuickCashProps){
  const {
-  products,cart,payment,customers,customerId,creditDueDate,total,cashOpen,disabled,
+  products,cart,payment,customers,customerId,creditDueDate,total,cashEntry,onCashEntry,cashOpen,disabled,
   reserved,controlledByLot,onAdd,onScan,onCamera,onQtyDelta,onQtyExact,onRemove,
   onClear,onPayment,onCustomer,onDueDate,onCheckout,onOpenCash,onNewCustomer
  }=props;
@@ -36,7 +36,6 @@ export function QuickCash(props:QuickCashProps){
  const [selectedId,setSelectedId]=useState<string|null>(null);
  const [mode,setMode]=useState<KeypadMode>("qty");
  const [qtyEntry,setQtyEntry]=useState("");
- const [cashEntry,setCashEntry]=useState("");
  const [showAll,setShowAll]=useState(false);
  const searchRef=useRef<HTMLInputElement>(null);
  const cartRef=useRef<HTMLDivElement>(null);
@@ -71,7 +70,7 @@ export function QuickCash(props:QuickCashProps){
  const press=(key:string)=>{
   if(disabled)return;
   if(mode==="qty")setQtyEntry(value=>quickKeypadValue(value,key,"qty"));
-  else setCashEntry(value=>quickKeypadValue(value,key,"cash"));
+  else onCashEntry(quickKeypadValue(cashEntry,key,"cash"));
  };
  const applyQty=()=>{
   if(!selected||!quantity.valid||disabled)return;
@@ -82,7 +81,7 @@ export function QuickCash(props:QuickCashProps){
  };
  useEffect(()=>{
   if(!cart.some(i=>i.productId===selectedId)){setSelectedId(null);setQtyEntry("")}
-  if(cart.length===0){setCashEntry("");setQtyEntry("");setSelectedId(null);setMode("qty")}
+  if(cart.length===0){onCashEntry("");setQtyEntry("");setSelectedId(null);setMode("qty")}
  },[cart,selectedId]);
  useEffect(()=>{
   const keys=(e:KeyboardEvent)=>{
@@ -92,7 +91,7 @@ export function QuickCash(props:QuickCashProps){
    if(e.key==="F8"&&!isFormTarget(e.target)){e.preventDefault();if(cart.length)onClear();return}
    if(e.key==="/"&&!isFormTarget(e.target)){e.preventDefault();searchRef.current?.focus();return}
    if(isFormTarget(e.target))return;
-   if(e.key==="Escape"){e.preventDefault();setQtyEntry("");setCashEntry("");return}
+   if(e.key==="Escape"){e.preventDefault();setQtyEntry("");onCashEntry("");return}
    // Numerais físicos são aceites apenas com a área do teclado numérico focada.
   };
   window.addEventListener("keydown",keys);
@@ -183,7 +182,7 @@ export function QuickCash(props:QuickCashProps){
       {keyLabels.map(key=><button type="button" key={key} onClick={()=>press(key)} disabled={disabled||mode==="qty"&&!selected} aria-label={key==="⌫"?"Apagar último dígito":key==="C"?"Limpar entrada":key}>{key==="⌫"?<Delete size={23}/>:key}</button>)}
       <button type="button" className="qc-keypad-comma" onClick={()=>press(".")} disabled={disabled||mode==="qty"&&!selected} aria-label="Vírgula decimal">,</button>
       {mode==="qty"?<button type="button" className="qc-keypad-apply" onClick={applyQty} disabled={disabled||!quantity.valid}>Aplicar quantidade</button>:
-       <button type="button" className="qc-keypad-apply" onClick={()=>setCashEntry(String(total))} disabled={disabled||total<=0}>Valor exacto</button>}
+       <button type="button" className="qc-keypad-apply" onClick={()=>onCashEntry(String(total))} disabled={disabled||total<=0}>Valor exacto</button>}
      </div>
     </div>
     {mode==="qty"&&qtyEntry&&!quantity.valid&&<p role="alert" className="qc-validation">{quantity.reason}</p>}
