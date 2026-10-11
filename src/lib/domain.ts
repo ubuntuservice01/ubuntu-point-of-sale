@@ -1,18 +1,29 @@
-export type Section = "dashboard" | "pos" | "products" | "customers" | "companies" | "modules" | "reports" | "settings";
+export type Section = "dashboard" | "pos" | "products" | "customers" | "companies" | "modules" | "reports" | "finance" | "settings" | "cash" | "suppliers" | "purchases" | "inventory" | "returns" | "expenses";
 export type Payment = "dinheiro" | "mpesa" | "emola" | "cartao" | "fiado";
 export type Product = { id:string; name:string; sku:string; category:string; unit:string; price:number; stock:number; active:boolean };
 export type Customer = { id:string; name:string; phone:string; debt:number; creditLimit?:number|null };
 export type CartItem = { productId:string; name:string; price:number; qty:number };
-export type Sale = { id:string; createdAt:string; items:CartItem[]; total:number; method:Payment; customerId?:string; dueDate?:string };
+export type Sale = { id:string; createdAt:string; items:CartItem[]; total:number; method:Payment; customerId?:string; dueDate?:string; cashSessionId?:string };
 export type Company = { id:string; name:string; slug:string; sector:string; status:"activa"|"teste"|"suspensa"; modules:string[] };
 export type Audit = { id:string; createdAt:string; action:string; description:string };
-export type CreditMovement = { id:string; customerId:string; kind:"fiado"|"pagamento"|"abertura"|"devolucao"; amount:number; createdAt:string; saleId?:string; dueDate?:string; method?:Exclude<Payment,"fiado">; note?:string };
-export type Store = { products:Product[]; customers:Customer[]; sales:Sale[]; companies:Company[]; audits:Audit[]; credits:CreditMovement[] };
+export type CreditMovement = { id:string; customerId:string; kind:"fiado"|"pagamento"|"abertura"|"devolucao"; amount:number; createdAt:string; saleId?:string; dueDate?:string; method?:Exclude<Payment,"fiado">; note?:string; cashSessionId?:string };
+export type Supplier={id:string;name:string;phone:string;email:string;city:string;active:boolean;createdAt:string};
+export type PurchaseItem={productId:string;qty:number;unitCost:number};
+export type Purchase={id:string;supplierId:string;items:PurchaseItem[];total:number;createdAt:string;paymentStatus:"paga"|"por_pagar";paymentMethod?:Exclude<Payment,"fiado">;cashSessionId?:string;reference:string};
+export type SupplierPayment={id:string;supplierId:string;amount:number;method:Exclude<Payment,"fiado">;createdAt:string;cashSessionId?:string;note:string};
+export type StockMovement={id:string;productId:string;kind:"compra"|"entrada"|"saida"|"ajuste"|"venda"|"devolucao";change:number;createdAt:string;reference:string;note:string;balanceAfter:number};
+export type ReturnItem={productId:string;qty:number;unitPrice:number};
+export type ReturnRecord={id:string;saleId:string;items:ReturnItem[];total:number;createdAt:string;method:Payment|"abater_fiado";cashSessionId?:string;note:string};
+export type Expense={id:string;description:string;category:string;amount:number;method:Exclude<Payment,"fiado">;createdAt:string;cashSessionId?:string;note:string};
+export type CashSession={id:string;openedAt:string;openingFloat:number;status:"aberta"|"fechada";closedAt?:string;expectedClose?:number;countedClose?:number;difference?:number;note?:string};
+export type CashMovement={id:string;sessionId:string;kind:"reforco"|"retirada";amount:number;createdAt:string;note:string};
+export type Store={products:Product[];customers:Customer[];sales:Sale[];companies:Company[];audits:Audit[];credits:CreditMovement[];suppliers:Supplier[];purchases:Purchase[];supplierPayments:SupplierPayment[];stockMovements:StockMovement[];returns:ReturnRecord[];expenses:Expense[];cashSessions:CashSession[];cashMovements:CashMovement[]};
 export const SECTIONS: {id:Section;label:string}[] = [
   {id:"dashboard",label:"Visão geral"},{id:"pos",label:"Ponto de venda"},
-  {id:"products",label:"Produtos e stock"},{id:"customers",label:"Fiado e dívidas"},
+  {id:"products",label:"Produtos e stock"},{id:"inventory",label:"Movimentos de stock"},{id:"customers",label:"Fiado e dívidas"},
+  {id:"cash",label:"Caixa"},{id:"suppliers",label:"Fornecedores"},{id:"purchases",label:"Compras"},{id:"returns",label:"Devoluções"},{id:"expenses",label:"Despesas"},
   {id:"modules",label:"Módulos"},
-  {id:"reports",label:"Relatórios"},{id:"settings",label:"Definições"}
+  {id:"reports",label:"Relatórios"},{id:"finance",label:"Resumo financeiro"},{id:"settings",label:"Definições"}
 ];
 export const MODULES = ["POS e caixa","Produtos e stock","Clientes e fiado","Farmácias","Restaurantes","Bares","Talhos","Produção","Grossistas","Catálogo online","Entregas","Fidelização","Assistente IA","Offline e sincronização","Balanças e equipamentos","Auditoria e alertas"];
 export const SECTORS = ["Farmácia","Loja","Pequeno comerciante","Restaurante","Bar","Talho","Padaria","Grossista"];
@@ -29,7 +40,7 @@ export const DEMO_PRODUCTS:Product[] = [
   {id:"p10",name:"Bolacha sortida",sku:"ALI-006",category:"Mercearia",unit:"un.",price:45,stock:41,active:true}
 ];
 export const initialStore = ():Store => ({
-  products:DEMO_PRODUCTS,customers:[],sales:[],companies:[],audits:[],credits:[]
+  products:DEMO_PRODUCTS.map(p=>({...p})),customers:[],sales:[],companies:[],audits:[],credits:[],suppliers:[],purchases:[],supplierPayments:[],stockMovements:[],returns:[],expenses:[],cashSessions:[],cashMovements:[]
 });
 export const money=(value:number)=>new Intl.NumberFormat("pt-MZ",{minimumFractionDigits:2,maximumFractionDigits:2}).format(value)+" MZN";
 export const roundMoney=(n:number)=>Math.round((n+Number.EPSILON)*100)/100;
@@ -45,8 +56,10 @@ export function safeStore(value:unknown):Store {
     const opening=(data.customers as Customer[])
       .filter(c=>Number.isFinite(c.debt)&&c.debt>0)
       .map(c=>({id:"abertura-"+c.id,customerId:c.id,kind:"abertura" as const,amount:roundMoney(c.debt),createdAt:new Date().toISOString(),note:"Saldo anterior; histórico detalhado não disponível."}));
-    return {...(data as Store),credits:opening};
+    return {...(data as Store),credits:opening,suppliers:[],purchases:[],supplierPayments:[],stockMovements:[],returns:[],expenses:[],cashSessions:[],cashMovements:[]};
   }
-  return data as Store;
+  // Compatibilidade com versões anteriores do protótipo (sem registos comerciais).
+  const collections=["suppliers","purchases","supplierPayments","stockMovements","returns","expenses","cashSessions","cashMovements"] as const;
+  return {...(data as Store),...Object.fromEntries(collections.map(k=>[k,Array.isArray(data[k])?data[k]:[]]))} as Store;
 }
 export function calcTotal(items:CartItem[]){return roundMoney(items.reduce((sum,item)=>sum+item.price*item.qty,0));}
