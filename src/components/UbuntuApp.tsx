@@ -21,10 +21,12 @@ import {prepareScanAudio,playSuccessfulScanBeep} from "../lib/scan-feedback";
 import {useUsbScanner} from "../hooks/useUsbScanner";
 import {snapshotSaleItems} from "../lib/profitability";
 import {ProfitabilityReports} from "./ProfitabilityReports";
+import {AlertCenter,AlertBellPopover} from "./AlertCenter";
+import {alertSummary,markAlertRead,markAlertUnread,operationalAlerts,pruneReadAlerts,type OperationalAlert} from "../lib/alerts";
 import {ThermalReceiptPanel,ThermalReceiptSettingsPanel} from "./ThermalReceipt";
 import {CircleDollarSign,Truck,ShoppingBag,RefreshCw,ArrowLeftRight,BookOpen,HandCoins as HandCoinsIcon,Pill,ChefHat,GlassWater,Beef,Factory,PackageCheck,Gift,MapPin,Globe2} from "lucide-react";
 
-const ICONS={dashboard:LayoutDashboard,pos:ShoppingCart,products:Package,inventory:ArrowLeftRight,customers:Users,cash:Wallet,suppliers:Truck,purchases:ShoppingBag,returns:RefreshCw,expenses:CircleDollarSign,finance:BookOpen,farmacia:Pill,restaurante:ChefHat,bar:GlassWater,talho:Beef,producao:Factory,grossistas:PackageCheck,catalogo:Globe2,"encomendas-online":ShoppingBag,entregas:MapPin,fidelizacao:Gift,companies:Building2,modules:Boxes,reports:ChartNoAxesCombined,settings:Settings};
+const ICONS={alertas:Bell,dashboard:LayoutDashboard,pos:ShoppingCart,products:Package,inventory:ArrowLeftRight,customers:Users,cash:Wallet,suppliers:Truck,purchases:ShoppingBag,returns:RefreshCw,expenses:CircleDollarSign,finance:BookOpen,farmacia:Pill,restaurante:ChefHat,bar:GlassWater,talho:Beef,producao:Factory,grossistas:PackageCheck,catalogo:Globe2,"encomendas-online":ShoppingBag,entregas:MapPin,fidelizacao:Gift,companies:Building2,modules:Boxes,reports:ChartNoAxesCombined,settings:Settings};
 type Notice={message:string;kind:"success"|"error"};
 function shortDate(iso:string){return new Intl.DateTimeFormat("pt-MZ",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}).format(new Date(iso));}
 function todayKey(date=new Date()){return [date.getFullYear(),String(date.getMonth()+1).padStart(2,"0"),String(date.getDate()).padStart(2,"0")].join("-");}
@@ -46,6 +48,12 @@ export function UbuntuApp(){
  const [collapsed,setCollapsed]=useState(false);
  const [openGroups,setOpenGroups]=useState<Record<NavGroupId,boolean>>(()=>Object.fromEntries(NAV_GROUPS.map(g=>[g.id,true])) as Record<NavGroupId,boolean>);
  const [headerPanel,setHeaderPanel]=useState<"search"|"alerts"|"profile"|null>(null);
+ const [clock,setClock]=useState(()=>new Date());
+ const [alertReference,setAlertReference]=useState("");
+ useEffect(()=>{
+  const tick=window.setInterval(()=>setClock(new Date()),60_000);
+  return()=>window.clearInterval(tick);
+ },[]);
  const [globalSearch,setGlobalSearch]=useState("");
  const posSearchRef=useRef<HTMLInputElement>(null);
  const globalSearchRef=useRef<HTMLInputElement>(null);
@@ -93,7 +101,7 @@ export function UbuntuApp(){
  },[]);
  const notify=(message:string,kind:Notice["kind"]="success")=>{setNotice({message,kind})};
  const audit=(action:string,description:string)=>({id:keyId(),createdAt:new Date().toISOString(),action,description});
- const navigate=(next:Section)=>{setSection(next);setMobileMenu(false);if(next==="pos")setMobilePosView("products");setQuery("");setProductPage(1);setCategory("Todos");setNotice(null);setHeaderPanel(null);setGlobalSearch("");const group=navGroupFor(next);if(group)setOpenGroups(prev=>({...prev,[group.id]:true}));};
+ const navigate=(next:Section)=>{setSection(next);setAlertReference("");setMobileMenu(false);if(next==="pos")setMobilePosView("products");setQuery("");setProductPage(1);setCategory("Todos");setNotice(null);setHeaderPanel(null);setGlobalSearch("");const group=navGroupFor(next);if(group)setOpenGroups(prev=>({...prev,[group.id]:true}));};
  useEffect(()=>{
   const shortCut=(e:KeyboardEvent)=>{
    if(section!=="pos"||modal||e.altKey||e.ctrlKey||e.metaKey||e.shiftKey)return;
@@ -131,6 +139,7 @@ export function UbuntuApp(){
    case "debt":navigate("customers");setDebtFilter("com-divida");break;
    case "purchase":navigate("purchases");break;
    case "cash":navigate("cash");break;
+   case "alerts":navigate("alertas");break;
   }
  };
  function addToCart(p:Product):boolean{
@@ -225,7 +234,28 @@ export function UbuntuApp(){
  function toggleCompanyModule(id:string,module:string){setData(old=>({...old,companies:old.companies.map(c=>c.id===id?{...c,modules:c.modules.includes(module)?c.modules.filter(m=>m!==module):[...c.modules,module]}:c),audits:[audit("Módulos ajustados","Alteração de demonstração · "+module),...old.audits]}));}
  const searchResults=globalSearch.trim()?SECTIONS.filter(item=>item.label.toLocaleLowerCase("pt").includes(globalSearch.trim().toLocaleLowerCase("pt"))).slice(0,7):[];
  const activeGroup=navGroupFor(section);
- const sidebarAlerts=stockAlerts+data.customers.filter(c=>creditPosition(c.id,data.credits,todayKey()).overdue>0).length;
+ const activeAlerts=useMemo(()=>operationalAlerts(data,clock),[data,clock]);
+ const alertCounts=useMemo(()=>alertSummary(activeAlerts,data.readAlertIds),[activeAlerts,data.readAlertIds]);
+ const markAsRead=(id:string)=>setData(old=>({...old,readAlertIds:markAlertRead(old.readAlertIds,id)}));
+ const markAsUnread=(id:string)=>setData(old=>({...old,readAlertIds:markAlertUnread(old.readAlertIds,id)}));
+ const markAllAsRead=()=>setData(old=>({...old,readAlertIds:pruneReadAlerts([...old.readAlertIds,...activeAlerts.map(a=>a.id)],activeAlerts)}));
+ const openAlert=(alert:OperationalAlert)=>{
+  markAsRead(alert.id);
+  navigate(alert.section);
+  if(alert.kind==="stock"){
+   const p=data.products.find(p=>p.id===alert.reference);
+   if(p)setQuery(p.sku);
+  }
+  if(alert.kind==="credit"){
+   setDebtFilter("vencidas");
+   setCustomerSearch(data.customers.find(c=>c.id===alert.reference)?.name??"");
+  }
+  if(alert.kind==="expiry"){
+   setAlertReference(data.pharmaLots.find(l=>l.id===alert.reference)?.lotNumber??"");
+  }
+  if(alert.kind==="orders")setAlertReference(alert.reference);
+ };
+ const sidebarAlerts=alertCounts.unread;
  const menuSections=NAV_GROUPS.map(group=>({...group,items:group.sections.map(id=>({id,label:sectionLabel(id),Icon:ICONS[id]}))}));
  return <div className="ubuntu-shell">
   <aside className={"sidebar "+(collapsed?"is-collapsed ":"")+(mobileMenu?"mobile-open":"")}>
@@ -251,8 +281,9 @@ export function UbuntuApp(){
     </div>
     <Link to="/catalogo" className="ux-header-link" title="Abrir catálogo de demonstração"><Globe2 size={17}/><span>Catálogo</span></Link>
     <div className="ux-header-popovers">
-     <button type="button" className="ux-header-icon" aria-label={"Alertas ("+sidebarAlerts+")"} aria-expanded={headerPanel==="alerts"} onClick={()=>setHeaderPanel(headerPanel==="alerts"?null:"alerts")}><Bell size={19}/>{sidebarAlerts>0&&<small>{sidebarAlerts>99?"99+":sidebarAlerts}</small>}</button>
-     {headerPanel==="alerts"&&<div className="ux-header-popover" role="region" aria-label="Alertas da demonstração"><h3>O que precisa de atenção</h3><button onClick={()=>navigate("products")}><Package size={18}/><span><b>{stockAlerts} produtos com stock baixo</b><small>Consultar e actualizar stock</small></span><ChevronRight size={16}/></button><button onClick={()=>{navigate("customers");setDebtFilter("vencidas")}}><HandCoins size={18}/><span><b>{money(debtOverdue)} em dívidas vencidas</b><small>Ver clientes com pagamentos em atraso</small></span><ChevronRight size={16}/></button></div>}
+     <button type="button" className="ux-header-icon" aria-label={"Alertas ("+sidebarAlerts+" por ler)"} aria-expanded={headerPanel==="alerts"} onClick={()=>setHeaderPanel(headerPanel==="alerts"?null:"alerts")}><Bell size={19}/>{sidebarAlerts>0&&<small>{sidebarAlerts>99?"99+":sidebarAlerts}</small>}</button>
+     {headerPanel==="alerts"&&<AlertBellPopover alerts={activeAlerts} readIds={data.readAlertIds} onOpen={openAlert} onAll={()=>navigate("alertas")}/>}
+}
     </div>
     <DemoBadge/>
     <div className="ux-header-popovers">
@@ -263,6 +294,9 @@ export function UbuntuApp(){
   </header>
   <main className="page-area">
    {notice&&<div role={notice.kind==="error"?"alert":"status"} className={"toast "+notice.kind}><span>{notice.message}</span><IconButton label="Fechar aviso" onClick={()=>setNotice(null)}><X size={16}/></IconButton></div>}
+   {section==="alertas"&&<AlertCenter alerts={activeAlerts} readIds={data.readAlertIds} settings={data.alertSettings}
+    onOpen={openAlert} onRead={markAsRead} onUnread={markAsUnread} onReadAll={markAllAsRead}
+    onSaveSettings={settings=>setData(old=>({...old,alertSettings:settings,readAlertIds:[]}))}/>}
    {section==="dashboard"&&<DashboardOverview data={data} go={navigate} addProduct={()=>{navigate("products");openProduct()}} addCustomer={()=>{navigate("customers");setModal("customer")}} openOverdue={()=>{navigate("customers");setDebtFilter("vencidas")}}/>}
    {section==="pos"&&<><PageHeading title="Ponto de venda" subtitle="Escolha os produtos e registe uma venda de demonstração." kicker="VENDAS" right={<button className="status-chip" onClick={()=>navigate("cash")}><span/>{activeCashSession(data)?"Caixa aberto":"Abrir caixa"} <ChevronRight size={14}/></button>}/><div id="mobile-pos-tabbar" className="mobile-pos-switch" role="group" aria-label="Etapas da venda">
  <button type="button" aria-pressed={mobilePosView==="products"} className={mobilePosView==="products"?"active":""} onClick={()=>setMobilePosView("products")}><Package size={18}/> Produtos</button>
@@ -301,9 +335,9 @@ export function UbuntuApp(){
     <p className="credit-disclaimer"><Info size={16}/> O fiado e os pagamentos nesta versão são exemplos guardados neste navegador. Não representam transacções reais.</p>
    </>}
    {section==="companies"&&<><PageHeading title="Empresas" kicker="ADMINISTRAÇÃO" subtitle="Simule a gestão de empresas, sectores e módulos da Ubuntu Service." right={<button className="primary-btn" onClick={()=>openCompany()}><Plus size={18}/> Registar empresa</button>}/><div className="security-notice"><ShieldCheck size={20}/><div><strong>Pré-visualização do Super Admin</strong><p>Esta secção ainda não tem autenticação nem isolamento real. Não concede acesso ou subdomínios e não deve receber dados empresariais verdadeiros.</p></div></div><div className="companies-toolbar"><div className="input-search"><Search size={18}/><input value={companySearch} onChange={e=>setCompanySearch(e.target.value)} placeholder="Pesquisar empresas…" aria-label="Pesquisar empresas"/></div><span className="helper">{data.companies.length} empresas na demonstração</span></div><div className="companies-grid">{data.companies.filter(c=>c.name.toLowerCase().includes(companySearch.toLowerCase())).map(c=><article className="surface company-card" key={c.id}><div className="company-top"><div className="company-logo">{c.name.charAt(0).toUpperCase()}</div><span className={"company-status "+c.status}>{c.status}</span></div><h3>{c.name}</h3><p>{c.sector} · {c.modules.length} módulos de demonstração</p><div className="fake-domain">{c.slug}.pos.exemplo.invalid</div><div className="module-checklist">{MODULES.slice(0,7).map(m=><label key={m}><input type="checkbox" checked={c.modules.includes(m)} onChange={()=>toggleCompanyModule(c.id,m)}/><span>{m}</span></label>)}</div><button className="outline-btn full-width" onClick={()=>openCompany(c)}>Editar empresa</button></article>)}</div>{data.companies.length>0&&data.companies.every(c=>!c.name.toLowerCase().includes(companySearch.toLowerCase()))?<section className="surface"><Empty icon={Search} title="Nenhuma empresa encontrada" description="Experimente outro nome de empresa."/></section>:null}{data.companies.length===0?<section className="surface"><Empty icon={Building2} title="Nenhuma empresa registada" description="Crie uma empresa demonstrativa para explorar a gestão multitenant." action={<button className="primary-btn" onClick={()=>openCompany()}><Plus size={17}/> Registar empresa</button>}/></section>:null}</>}
-   {(["farmacia","restaurante","bar","talho"] as const).includes(section as "farmacia")&&<SectorOperations section={section as "farmacia"|"restaurante"|"bar"|"talho"} data={data} onChange={setData} notify={notify} go={navigate}/>}
-   {(["producao","grossistas"] as const).includes(section as "producao")&&<ExpansionOperations section={section as "producao"|"grossistas"} data={data} onChange={setData} notify={notify} go={navigate}/>}
-   {(["catalogo","encomendas-online","entregas","fidelizacao"] as const).includes(section as "catalogo")&&<DigitalCommerce section={section as "catalogo"|"encomendas-online"|"entregas"|"fidelizacao"} data={data} onChange={setData} notify={notify} go={navigate}/>}
+   {(["farmacia","restaurante","bar","talho"] as const).includes(section as "farmacia")&&<SectorOperations section={section as "farmacia"|"restaurante"|"bar"|"talho"} data={data} onChange={setData} notify={notify} go={navigate} focusReference={section==="farmacia"?alertReference:""}/>}
+   {(["producao","grossistas"] as const).includes(section as "producao")&&<ExpansionOperations section={section as "producao"|"grossistas"} data={data} onChange={setData} notify={notify} go={navigate} focusReference={section==="grossistas"?alertReference:""}/>}
+   {(["catalogo","encomendas-online","entregas","fidelizacao"] as const).includes(section as "catalogo")&&<DigitalCommerce section={section as "catalogo"|"encomendas-online"|"entregas"|"fidelizacao"} data={data} onChange={setData} notify={notify} go={navigate} focusReference={["encomendas-online","entregas"].includes(section)?alertReference:""}/>}
    {section==="modules"&&<><PageHeading title="Módulos da plataforma" kicker="FUNCIONALIDADES" subtitle="Escolha os recursos adequados a cada tipo de negócio."/><div className="modules-notice"><Info size={18}/><span>Os módulos de farmácias, restaurantes, bares, talhos, produção, grossistas, catálogo online, encomendas digitais, entregas e fidelização já podem ser testados no frontend.</span></div><div className="module-grid">{MODULES.map((m,i)=>{const iClass=i%6;return <article className="surface module-card" key={m}><span className={"module-icon module-"+iClass}><Boxes size={25}/></span><h3>{m}</h3><p>{moduleDescription(m)}</p></article>})}</div></>}
    {section==="reports"&&<><ProfitabilityReports data={data} go={navigate}/><section className="surface table-panel"><div className="panel-head"><div><h2>Histórico de vendas</h2><p>Dados locais — não constituem facturação</p></div></div>{data.sales.length===0?<Empty icon={Receipt} title="Nenhuma venda registada" description="As vendas simuladas realizadas no ponto de venda aparecem aqui." action={<button className="primary-btn" onClick={()=>navigate("pos")}>Ir para o ponto de venda</button>}/>:<div className="table-scroll"><table className="data-table"><thead><tr><th>Referência</th><th>Data</th><th>Artigos</th><th>Pagamento</th><th>Total</th><th>Comprovativo</th></tr></thead><tbody>{data.sales.map(s=><tr key={s.id}><td><b>{s.id}</b></td><td>{shortDate(s.createdAt)}</td><td>{s.items.reduce((sum,p)=>sum+p.qty,0)}</td><td>{paymentText[s.method]}</td><td className="num-text">{money(s.total)}</td><td><button type="button" className="thermal-history-print" aria-label={"Reimprimir comprovativo "+s.id} onClick={()=>{setReceipt(s);setReceiptFresh(false);setModal("receipt")}}><Printer size={15}/> Imprimir</button></td></tr>)}</tbody></table></div>}</section></>}
    {(["cash","suppliers","purchases","inventory","returns","expenses","finance"] as const).includes(section as "cash")&&<CommercialOperations section={section as "cash"|"suppliers"|"purchases"|"inventory"|"returns"|"expenses"|"finance"} data={data} onChange={setData} notify={notify} go={navigate}/>}

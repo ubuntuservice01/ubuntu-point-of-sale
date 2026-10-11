@@ -10,7 +10,7 @@ import {
 } from "../lib/expansion";
 type CommerceSector=Extract<Section,"producao"|"grossistas">;
 type CashMethod=Exclude<Payment,"fiado">;
-type Props={section:CommerceSector;data:StoreData;onChange:(state:StoreData)=>void;notify:(msg:string,kind?:"success"|"error")=>void;go:(section:Section)=>void};
+type Props={section:CommerceSector;focusReference?:string;data:StoreData;onChange:(state:StoreData)=>void;notify:(msg:string,kind?:"success"|"error")=>void;go:(section:Section)=>void};
 type Dialog="recipe"|"run"|"tier"|"order"|null;
 type RecipeLine={productId:string;qty:string};
 type DraftOrderLine={productId:string;qty:string};
@@ -43,7 +43,7 @@ function Notice({warning=false,children}:{warning?:boolean;children:ReactNode}){
  return <div className={"ex-notice "+(warning?"warning":"")}><Info size={18}/><p>{children}</p></div>;
 }
 const disabledWithReason=(disabled:boolean,reason:string)=>disabled?reason:undefined;
-export function ExpansionOperations({section,data,onChange,notify,go}:Props){
+export function ExpansionOperations({section,focusReference,data,onChange,notify,go}:Props){
  const activeProducts=data.products.filter(p=>p.active&&!data.pharmaLots.some(l=>l.productId===p.id));
  const [dialog,setDialog]=useState<Dialog>(null);
  const [error,setError]=useState("");
@@ -64,6 +64,7 @@ export function ExpansionOperations({section,data,onChange,notify,go}:Props){
  const [orderFilter,setOrderFilter]=useState("todos");
  const [recipeFilter,setRecipeFilter]=useState("todos");
  useEffect(()=>{setSearch("");setDialog(null);setError("");setOrderFilter("todos");setRecipeFilter("todos")},[section]);
+ useEffect(()=>{if(focusReference){setSearch(focusReference);setOrderFilter("todos")}},[focusReference,section]);
  const close=()=>{setDialog(null);setError("")};
  const open=(which:Dialog)=>{setError("");setDialog(which)};
  const apply=(op:(value:StoreData)=>StoreData,message:string)=>{

@@ -31,6 +31,10 @@ bun run dev
 bun run build
 ```
 
+## Passo 4/5 — Central de alertas operacionais
+
+Nova página **Central de alertas** e sino integrado, com avisos de stock, fiado vencido, validade de lotes e encomendas pendentes. Inclui filtros, prioridades, leitura de avisos e limites configuráveis. Os dados vêm **exclusivamente do navegador**: não são notificações push nem mensagens externas. Ver [Documentação dos alertas](docs/ALERTAS-OPERACIONAIS-2026-10-11.md).
+
 ## Impressão térmica de comprovativos (passo 3/5)
 
 Pré-visualização e impressão pelo navegador em rolos de **58 mm e 80 mm**, com nome/logótipo da loja, artigos, totais, QR local de referência e reimpressão por histórico. Os documentos são **demonstrativos e não fiscais**; o controlo do papel/corte depende da impressora. Ver [Manual técnico e limitações](docs/IMPRESSAO-TERMICA-2026-10-11.md).

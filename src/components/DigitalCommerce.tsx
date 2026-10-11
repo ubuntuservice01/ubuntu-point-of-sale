@@ -6,7 +6,7 @@ import {money,type Store as StoreData,type Section,type OnlineOrder,type Courier
 import {listedProducts,getCatalogListing,catalogStockFree,updateCatalogSettings,setCatalogListing,advanceOnlineOrder,cancelOnlineOrder,registerCourier,toggleCourier,assignCourier,dispatchDelivery,completeOnlineOrder} from "../lib/online";
 import {loyaltyBalance,redeemLoyaltyReward,markLoyaltyRewardDelivered,updateLoyaltySettings} from "../lib/loyalty";
 type View=Extract<Section,"catalogo"|"encomendas-online"|"entregas"|"fidelizacao">;
-type Props={section:View;data:StoreData;onChange:(value:StoreData)=>void;notify:(text:string,kind?:"success"|"error")=>void;go:(section:Section)=>void};
+type Props={section:View;focusReference?:string;data:StoreData;onChange:(value:StoreData)=>void;notify:(text:string,kind?:"success"|"error")=>void;go:(section:Section)=>void};
 type ModalType="courier"|"assign"|"redeem"|null;
 const orderState:Record<OnlineOrder["state"],string>={recebida:"Recebida",confirmada:"Confirmada",preparacao:"Em preparação",pronta:"Pronta",em_entrega:"Em entrega",entregue:"Entregue",levantada:"Levantada",cancelada:"Cancelada"};
 const nextName:Partial<Record<OnlineOrder["state"],string>>={recebida:"Confirmar",confirmada:"Preparar",preparacao:"Marcar pronta"};
@@ -18,7 +18,7 @@ function Kpi({label,value,foot,icon:Icon}:{label:string;value:string;foot:string
 function Field({title,children}:{title:string;children:ReactNode}){return <label className="dg-field"><b>{title}</b>{children}</label>}
 function Blank({icon:Icon,title,detail,action}:{icon:typeof Store;title:string;detail:string;action?:ReactNode}){return <div className="dg-blank"><span><Icon size={25}/></span><h3>{title}</h3><p>{detail}</p>{action}</div>}
 function Modal({title,onClose,error,children}:{title:string;onClose:()=>void;error:string;children:ReactNode}){const dialogRef=useDialogFocus<HTMLElement>(onClose);return <div className="dg-mask" onMouseDown={e=>{if(e.currentTarget===e.target)onClose()}}><section ref={dialogRef} tabIndex={-1} className="dg-modal" role="dialog" aria-modal="true" aria-label={title}><header><h2>{title}</h2><button onClick={onClose} aria-label="Fechar"><X size={18}/></button></header><div className="dg-modal-body">{error&&<p role="alert" className="dg-error"><AlertTriangle size={16}/>{error}</p>}{children}</div></section></div>}
-export function DigitalCommerce({section,data,onChange,notify,go}:Props){
+export function DigitalCommerce({section,focusReference,data,onChange,notify,go}:Props){
  const [settings,setSettings]=useState<CatalogSettings>({...data.catalogSettings});
  const [loyalty,setLoyalty]=useState<LoyaltySettings>({...data.loyaltySettings});
  const [query,setQuery]=useState("");
@@ -40,6 +40,7 @@ export function DigitalCommerce({section,data,onChange,notify,go}:Props){
  const loyaltyCustomers=data.customers.filter(c=>loyaltyBalance(data,c.id)!==0||data.loyaltyMovements.some(m=>m.customerId===c.id));
  const customerPoints=data.customers.filter(c=>(c.name+" "+c.phone).toLowerCase().includes(query.toLowerCase())).sort((a,b)=>loyaltyBalance(data,b.id)-loyaltyBalance(data,a.id));
  useEffect(()=>{setQuery("");setStatus("todos");setModal(null);setFormError("")},[section]);
+ useEffect(()=>{if(focusReference){setQuery(focusReference);setStatus("todos")}},[focusReference,section]);
  useEffect(()=>{setSettings({...data.catalogSettings})},[data.catalogSettings]);
  useEffect(()=>{setLoyalty({...data.loyaltySettings})},[data.loyaltySettings]);
  const change=(call:(s:StoreData)=>StoreData,done:string)=>{

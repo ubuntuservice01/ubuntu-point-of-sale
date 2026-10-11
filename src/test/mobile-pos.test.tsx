@@ -32,11 +32,11 @@ describe("Navegação de telemóvel do POS",()=>{
   const nav=screen.getByRole("navigation",{name:"Navegação rápida móvel"});
   expect(within(nav).getAllByRole("button")).toHaveLength(5);
   expect(MOBILE_NAV_ITEMS).toHaveLength(4);
-  expect(MOBILE_QUICK_ACTIONS).toHaveLength(6);
+  expect(MOBILE_QUICK_ACTIONS).toHaveLength(7);
   const more=within(nav).getByRole("button",{name:"Mais"});
   fireEvent.click(more);
   const dialog=screen.getByRole("dialog",{name:"Acções rápidas"});
-  expect(within(dialog).getAllByRole("button")).toHaveLength(7);
+  expect(within(dialog).getAllByRole("button")).toHaveLength(8);
   fireEvent.click(within(dialog).getByRole("button",{name:/Novo produto/}));
   expect(screen.queryByRole("dialog",{name:"Acções rápidas"})).toBeNull();
   expect(screen.getByRole("dialog",{name:"Adicionar produto"})).toBeTruthy();

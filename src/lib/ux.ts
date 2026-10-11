@@ -2,7 +2,7 @@ import {money,roundMoney,SECTIONS,type Payment,type Sale,type Section,type Store
 
 /** Organização apenas visual: não altera direitos nem concede acesso a áreas restritas. */
 export const NAV_GROUPS = [
- {id:"operacoes",label:"Operações",sections:["dashboard","pos","cash","customers","returns"]},
+ {id:"operacoes",label:"Operações",sections:["dashboard","alertas","pos","cash","customers","returns"]},
  {id:"produtos",label:"Produtos e stock",sections:["products","inventory","purchases","suppliers"]},
  {id:"gestao",label:"Gestão",sections:["expenses","reports","finance","catalogo","encomendas-online","entregas","fidelizacao"]},
  {id:"sectores",label:"Negócios especializados",sections:["farmacia","restaurante","bar","talho","producao","grossistas"]},

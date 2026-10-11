@@ -1,5 +1,5 @@
 import {useEffect,useState} from "react";
-import {LayoutDashboard,ShoppingCart,Package,HandCoins,Grid3X3,X,Plus,Users,Receipt,Wallet,ClipboardList,ArrowRight} from "lucide-react";
+import {LayoutDashboard,ShoppingCart,Package,HandCoins,Grid3X3,Bell,X,Plus,Users,Receipt,Wallet,ClipboardList,ArrowRight} from "lucide-react";
 import {money,type Section} from "../lib/domain";
 import {useDialogFocus} from "../lib/useDialogFocus";
 
@@ -16,7 +16,8 @@ export const MOBILE_QUICK_ACTIONS=[
  {id:"customer",label:"Novo cliente",subtitle:"Abrir cadastro",icon:Users},
  {id:"debt",label:"Receber fiado",subtitle:"Escolher cliente devedor",icon:HandCoins},
  {id:"purchase",label:"Compras e entradas",subtitle:"Gerir recepções",icon:ClipboardList},
- {id:"cash",label:"Gestão de caixa",subtitle:"Abrir, consultar ou fechar",icon:Wallet}
+ {id:"cash",label:"Gestão de caixa",subtitle:"Abrir, consultar ou fechar",icon:Wallet},
+ {id:"alerts",label:"Central de alertas",subtitle:"Ver avisos e prioridades",icon:Bell}
 ] as const;
 export type QuickActionId=(typeof MOBILE_QUICK_ACTIONS)[number]["id"];
 type Props={

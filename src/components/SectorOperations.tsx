@@ -7,7 +7,7 @@ import {availablePharmaLots,nearExpiry,registerPharmaLot,registerPharmaDispense,
 type SectorSection=Extract<Section,"farmacia"|"restaurante"|"bar"|"talho">;
 type PayMethod=Exclude<Payment,"fiado">;
 type Dialog="lot"|"dispense"|"table"|"order"|"batch"|"weighted"|null;
-type Props={section:SectorSection;data:StoreData;onChange:(store:StoreData)=>void;notify:(message:string,kind?:"success"|"error")=>void;go:(section:Section)=>void};
+type Props={section:SectorSection;focusReference?:string;data:StoreData;onChange:(store:StoreData)=>void;notify:(message:string,kind?:"success"|"error")=>void;go:(section:Section)=>void};
 const TODAY=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-")};
 const paymentLabel:Record<PayMethod,string>={dinheiro:"Dinheiro",mpesa:"M-Pesa",emola:"e-Mola",cartao:"Cartão"};
 const orderLabel:Record<ServiceOrder["state"],string>={aberta:"Aberta",preparacao:"Em preparação",pronta:"Pronta",servida:"Servida",fechada:"Fechada",anulada:"Anulada"};
@@ -38,7 +38,7 @@ function Hint({children,warning=false}:{children:ReactNode;warning?:boolean}){
  return <div className={"sc-hint "+(warning?"warning":"")}><Info size={18}/><span>{children}</span></div>;
 }
 const SectionMessage=({children}:{children:ReactNode})=><p className="sc-help">{children}</p>;
-export function SectorOperations({section,data,onChange,notify,go}:Props){
+export function SectorOperations({section,focusReference,data,onChange,notify,go}:Props){
  const today=TODAY();
  const activeProducts=data.products.filter(p=>p.active);
  const trackedIds=new Set(data.pharmaLots.map(l=>l.productId));
@@ -77,6 +77,7 @@ export function SectorOperations({section,data,onChange,notify,go}:Props){
  const [weightQty,setWeightQty]=useState("");
  const [weightMethod,setWeightMethod]=useState<PayMethod>("dinheiro");
  useEffect(()=>{setQuery("");setDialog(null);setError("");setOrderId("");},[section]);
+ useEffect(()=>{if(focusReference)setQuery(focusReference)},[focusReference,section]);
  const close=()=>{setDialog(null);setError("")};
  const show=(kind:Dialog)=>{setError("");setDialog(kind)};
  const submit=(process:(store:StoreData)=>StoreData,message:string)=>{

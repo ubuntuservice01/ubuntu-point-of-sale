@@ -1,5 +1,6 @@
+import {defaultAlertSettings,safeAlertSettings,safeReadAlerts,type AlertSettings} from "./alerts";
 import {defaultThermalReceiptSettings as importedDefaultReceiptSettings,sanitizeThermalSettings as importedSanitizeReceiptSettings,type ThermalReceiptSettings} from "./thermal-receipt";
-export type Section = "dashboard" | "pos" | "products" | "customers" | "companies" | "modules" | "reports" | "finance" | "settings" | "cash" | "suppliers" | "purchases" | "inventory" | "returns" | "expenses" | "farmacia" | "restaurante" | "bar" | "talho" | "producao" | "grossistas" | "catalogo" | "encomendas-online" | "entregas" | "fidelizacao";
+export type Section = "alertas" | "dashboard" | "pos" | "products" | "customers" | "companies" | "modules" | "reports" | "finance" | "settings" | "cash" | "suppliers" | "purchases" | "inventory" | "returns" | "expenses" | "farmacia" | "restaurante" | "bar" | "talho" | "producao" | "grossistas" | "catalogo" | "encomendas-online" | "entregas" | "fidelizacao";
 export type Payment = "dinheiro" | "mpesa" | "emola" | "cartao" | "fiado";
 export type Product = { id:string; name:string; sku:string; barcode?:string; category:string; unit:string; price:number; purchasePrice?:number; stock:number; active:boolean };
 export type Customer = { id:string; name:string; phone:string; debt:number; creditLimit?:number|null };
@@ -40,9 +41,9 @@ export type Courier={id:string;name:string;phone:string;active:boolean;createdAt
 export type LoyaltySettings={enabled:boolean;meticaisPerPoint:number;rewardPoints:number;rewardName:string};
 export type LoyaltyMovement={id:string;customerId:string;kind:"ganho"|"resgate"|"estorno";points:number;createdAt:string;note:string;saleId?:string;creditMovementId?:string;rewardId?:string};
 export type LoyaltyReward={id:string;customerId:string;name:string;points:number;state:"por_entregar"|"entregue";createdAt:string;deliveredAt?:string};
-export type Store={receiptSettings:ThermalReceiptSettings;products:Product[];customers:Customer[];sales:Sale[];companies:Company[];audits:Audit[];credits:CreditMovement[];suppliers:Supplier[];purchases:Purchase[];supplierPayments:SupplierPayment[];stockMovements:StockMovement[];returns:ReturnRecord[];expenses:Expense[];cashSessions:CashSession[];cashMovements:CashMovement[];pharmaLots:PharmaLot[];pharmaDispenses:PharmaDispense[];serviceTables:ServiceTable[];serviceOrders:ServiceOrder[];butcherBatches:ButcherBatch[];productionRecipes:ProductionRecipe[];productionRuns:ProductionRun[];wholesaleTiers:WholesaleTier[];wholesaleOrders:WholesaleOrder[];catalogSettings:CatalogSettings;catalogListings:CatalogListing[];onlineOrders:OnlineOrder[];couriers:Courier[];loyaltySettings:LoyaltySettings;loyaltyMovements:LoyaltyMovement[];loyaltyRewards:LoyaltyReward[]};
+export type Store={alertSettings:AlertSettings;readAlertIds:string[];receiptSettings:ThermalReceiptSettings;products:Product[];customers:Customer[];sales:Sale[];companies:Company[];audits:Audit[];credits:CreditMovement[];suppliers:Supplier[];purchases:Purchase[];supplierPayments:SupplierPayment[];stockMovements:StockMovement[];returns:ReturnRecord[];expenses:Expense[];cashSessions:CashSession[];cashMovements:CashMovement[];pharmaLots:PharmaLot[];pharmaDispenses:PharmaDispense[];serviceTables:ServiceTable[];serviceOrders:ServiceOrder[];butcherBatches:ButcherBatch[];productionRecipes:ProductionRecipe[];productionRuns:ProductionRun[];wholesaleTiers:WholesaleTier[];wholesaleOrders:WholesaleOrder[];catalogSettings:CatalogSettings;catalogListings:CatalogListing[];onlineOrders:OnlineOrder[];couriers:Courier[];loyaltySettings:LoyaltySettings;loyaltyMovements:LoyaltyMovement[];loyaltyRewards:LoyaltyReward[]};
 export const SECTIONS: {id:Section;label:string}[] = [
-  {id:"dashboard",label:"Visão geral"},{id:"pos",label:"Ponto de venda"},
+  {id:"dashboard",label:"Visão geral"},{id:"alertas",label:"Central de alertas"},{id:"pos",label:"Ponto de venda"},
   {id:"products",label:"Produtos e stock"},{id:"inventory",label:"Movimentos de stock"},{id:"customers",label:"Fiado e dívidas"},
   {id:"cash",label:"Caixa"},{id:"suppliers",label:"Fornecedores"},{id:"purchases",label:"Compras"},{id:"returns",label:"Devoluções"},{id:"expenses",label:"Despesas"},
   {id:"farmacia",label:"Farmácias"},{id:"restaurante",label:"Restaurantes"},{id:"bar",label:"Bares"},{id:"talho",label:"Talhos"},
@@ -79,6 +80,7 @@ export function quantityReserved(s:Store,productId:string,excludedOrder?:string)
 export const defaultCatalogSettings=():CatalogSettings=>({enabled:true,name:"Loja Ubuntu POS 360",description:"Encontre os seus produtos e prepare uma encomenda de demonstração.",pickupEnabled:true,deliveryEnabled:true,deliveryFee:100,minimumOrder:0,phone:""});
 export const defaultLoyaltySettings=():LoyaltySettings=>({enabled:true,meticaisPerPoint:100,rewardPoints:25,rewardName:"Benefício de fidelização"});
 export const initialStore = ():Store => ({
+  alertSettings:defaultAlertSettings(),readAlertIds:[],
   receiptSettings:importedDefaultReceiptSettings(),
   products:DEMO_PRODUCTS.map(p=>({...p})),customers:[],sales:[],companies:[],audits:[],credits:[],suppliers:[],purchases:[],supplierPayments:[],stockMovements:[],returns:[],expenses:[],cashSessions:[],cashMovements:[],pharmaLots:[],pharmaDispenses:[],serviceTables:[],serviceOrders:[],butcherBatches:[],productionRecipes:[],productionRuns:[],wholesaleTiers:[],wholesaleOrders:[],catalogSettings:defaultCatalogSettings(),catalogListings:[],onlineOrders:[],couriers:[],loyaltySettings:defaultLoyaltySettings(),loyaltyMovements:[],loyaltyRewards:[]
 });
@@ -96,14 +98,15 @@ export function safeStore(value:unknown):Store {
     const opening=(data.customers as Customer[])
       .filter(c=>Number.isFinite(c.debt)&&c.debt>0)
       .map(c=>({id:"abertura-"+c.id,customerId:c.id,kind:"abertura" as const,amount:roundMoney(c.debt),createdAt:new Date().toISOString(),note:"Saldo anterior; histórico detalhado não disponível."}));
-    return {...(data as Store),credits:opening,suppliers:[],purchases:[],supplierPayments:[],stockMovements:[],returns:[],expenses:[],cashSessions:[],cashMovements:[],pharmaLots:[],pharmaDispenses:[],serviceTables:[],serviceOrders:[],butcherBatches:[],productionRecipes:[],productionRuns:[],wholesaleTiers:[],wholesaleOrders:[],catalogSettings:defaultCatalogSettings(),catalogListings:[],onlineOrders:[],couriers:[],loyaltySettings:defaultLoyaltySettings(),loyaltyMovements:[],loyaltyRewards:[],receiptSettings:importedDefaultReceiptSettings()};
+    return {...(data as Store),credits:opening,suppliers:[],purchases:[],supplierPayments:[],stockMovements:[],returns:[],expenses:[],cashSessions:[],cashMovements:[],pharmaLots:[],pharmaDispenses:[],serviceTables:[],serviceOrders:[],butcherBatches:[],productionRecipes:[],productionRuns:[],wholesaleTiers:[],wholesaleOrders:[],catalogSettings:defaultCatalogSettings(),catalogListings:[],onlineOrders:[],couriers:[],loyaltySettings:defaultLoyaltySettings(),loyaltyMovements:[],loyaltyRewards:[],receiptSettings:importedDefaultReceiptSettings(),alertSettings:defaultAlertSettings(),readAlertIds:[]};
   }
   // Compatibilidade com versões anteriores do protótipo (sem registos comerciais).
   const collections=["suppliers","purchases","supplierPayments","stockMovements","returns","expenses","cashSessions","cashMovements","pharmaLots","pharmaDispenses","serviceTables","serviceOrders","butcherBatches","productionRecipes","productionRuns","wholesaleTiers","wholesaleOrders","catalogListings","onlineOrders","couriers","loyaltyMovements","loyaltyRewards"] as const;
   return {...(data as Store),...Object.fromEntries(collections.map(k=>[k,Array.isArray(data[k])?data[k]:[]])),
  catalogSettings:data.catalogSettings&&typeof data.catalogSettings==="object"?{...defaultCatalogSettings(),...data.catalogSettings}:defaultCatalogSettings(),
  loyaltySettings:data.loyaltySettings&&typeof data.loyaltySettings==="object"?{...defaultLoyaltySettings(),...data.loyaltySettings}:defaultLoyaltySettings(),
- receiptSettings:importedSanitizeReceiptSettings(data.receiptSettings)} as Store;
+ receiptSettings:importedSanitizeReceiptSettings(data.receiptSettings),
+ alertSettings:safeAlertSettings(data.alertSettings),readAlertIds:safeReadAlerts(data.readAlertIds)} as Store;
 }
 /** Permite até gramas/mililitros para kg/L; restantes produtos têm quantidade inteira. */
 export function validStockQuantity(quantity:number,unit:string,allowZero=false):boolean{

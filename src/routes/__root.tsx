@@ -14,6 +14,7 @@ import barcodeCss from "../styles/barcode-scanner.css?url";
 import mobilePosCss from "../styles/mobile-pos.css?url";
 import profitCss from "../styles/profitability.css?url";
 import thermalCss from "../styles/thermal-receipt.css?url";
+import alertsCss from "../styles/alerts.css?url";
 
 export const Route = createRootRouteWithContext<{queryClient:QueryClient}>()({
  head:()=>({
@@ -25,7 +26,7 @@ export const Route = createRootRouteWithContext<{queryClient:QueryClient}>()({
    {property:"og:title",content:"Ubuntu POS 360"},
    {property:"og:description",content:"Criando pontes entre o físico e o digital."}
   ],
-  links:[{rel:"stylesheet",href:appCss},{rel:"stylesheet",href:adminCss},{rel:"stylesheet",href:companyCss},{rel:"stylesheet",href:commerceCss},{rel:"stylesheet",href:sectorCss},{rel:"stylesheet",href:expansionCss},{rel:"stylesheet",href:digitalCss},{rel:"stylesheet",href:publicCss},{rel:"stylesheet",href:uxCss},{rel:"stylesheet",href:barcodeCss},{rel:"stylesheet",href:mobilePosCss},{rel:"stylesheet",href:profitCss},{rel:"stylesheet",href:thermalCss},{rel:"icon",href:"/favicon.svg",type:"image/svg+xml"}]
+  links:[{rel:"stylesheet",href:appCss},{rel:"stylesheet",href:adminCss},{rel:"stylesheet",href:companyCss},{rel:"stylesheet",href:commerceCss},{rel:"stylesheet",href:sectorCss},{rel:"stylesheet",href:expansionCss},{rel:"stylesheet",href:digitalCss},{rel:"stylesheet",href:publicCss},{rel:"stylesheet",href:uxCss},{rel:"stylesheet",href:barcodeCss},{rel:"stylesheet",href:mobilePosCss},{rel:"stylesheet",href:profitCss},{rel:"stylesheet",href:thermalCss},{rel:"stylesheet",href:alertsCss},{rel:"icon",href:"/favicon.svg",type:"image/svg+xml"}]
  }),
  shellComponent:Shell,
  component:Root
