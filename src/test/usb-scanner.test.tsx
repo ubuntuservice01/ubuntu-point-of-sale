@@ -44,7 +44,7 @@ function startPos(){
  const nav=screen.getByRole("navigation",{name:"Navegação principal"});
  fireEvent.click(within(nav).getByRole("button",{name:"Ponto de venda"}));
 }
-beforeEach(()=>{window.localStorage.clear();vi.mocked(playSuccessfulScanBeep).mockClear();desktop()});
+beforeEach(()=>{window.localStorage.clear();vi.mocked(playSuccessfulScanBeep).mockClear();desktop();vi.spyOn(HTMLMediaElement.prototype,"pause").mockImplementation(()=>{})});
 afterEach(()=>{cleanup();window.localStorage.clear();vi.unstubAllGlobals()});
 
 describe("Scanner USB como teclado e bip de confirmação",()=>{
@@ -61,7 +61,7 @@ describe("Scanner USB como teclado e bip de confirmação",()=>{
  it("ignora códigos inexistentes sem emitir som",()=>{
   startPos();keyboardScan("NAO-999");
   expect(vi.mocked(playSuccessfulScanBeep)).not.toHaveBeenCalled();
-  expect(screen.getByRole("status").textContent).toContain("não encontrado");
+  expect(screen.getByRole("alert").textContent).toContain("não encontrado");
   expect(screen.getByText("0 itens")).toBeTruthy();
  });
  it("não intercepta digitação em campos editáveis nem teclas modificadoras",()=>{
