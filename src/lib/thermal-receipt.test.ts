@@ -70,6 +70,21 @@ describe("QR Code local para a referência",()=>{
   expect(()=>qrMatrix("A".repeat(79))).toThrow(/demasiado longa/);
   expect(()=>qrMatrix("A".repeat(78))).not.toThrow();
  });
+ it("corresponde à matriz independente de referência QR Code 4-L em modo byte",()=>{
+  const result=qrMatrix("UBUNTU-POS360-DEMO:VD-TEST-001");
+  const goldenRows:Record<number,string>={
+   0:"111111100010001000100001101111111",
+   1:"100000100100010001000101101000001",
+   5:"100000100011101110111101001000001",
+   10:"110111100011101110111010011010111",
+   17:"011000011111110111011101110100100",
+   25:"000000001001110111011101100010100",
+   32:"111111101000100010001001100011011"
+  };
+  for(const [index,row] of Object.entries(goldenRows)){
+   expect(result[Number(index)]!.map(v=>v?"1":"0").join("")).toBe(row);
+  }
+ });
  it("é determinístico e a alteração da referência altera o código",()=>{
   const a=qrPath("UBUNTU-POS360-DEMO:VD-111");
   const b=qrPath("UBUNTU-POS360-DEMO:VD-222");
