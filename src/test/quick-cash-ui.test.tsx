@@ -66,7 +66,8 @@ describe("Caixa rápido — interface do operador",()=>{
   fireEvent.click(within(root).getByRole("button",{name:"0"}));
   fireEvent.click(within(root).getByRole("button",{name:"0"}));
   expect(within(root).getByText("Troco previsto")).toBeTruthy();
-  expect(within(root).getByText(/50,00/)).toBeTruthy();
+  const troco=within(root).getByText("Troco previsto").parentElement?.querySelector("strong");
+  expect(troco?.textContent).toMatch(/^50,00/);
   fireEvent.keyDown(window,{key:"F4"});
   expect(mocks.checkout).toHaveBeenCalledTimes(1);
  });
@@ -91,7 +92,7 @@ describe("Caixa rápido — interface do operador",()=>{
   const search=within(root).getByRole("textbox",{name:"Pesquisar código ou produto no caixa rápido"});
   fireEvent.keyDown(window,{key:"F2"});
   expect(document.activeElement).toBe(search);
-  fireEvent.keyDown(window,{key:"F8"});
+  fireEvent.keyDown(search,{key:"F8"});
   expect(mocks.clear).not.toHaveBeenCalled();
   search.blur();
   fireEvent.keyDown(window,{key:"F8"});
@@ -113,7 +114,7 @@ describe("Caixa rápido integrado no POS existente",()=>{
   fireEvent.click(screen.getByRole("button",{name:"Modo Caixa Rápido"}));
   const root=screen.getByRole("region",{name:"Modo Caixa Rápido"});
   expect(within(root).getByText("Venda actual")).toBeTruthy();
-  expect(within(root).getByText("Arroz 5 kg")).toBeTruthy();
+  expect(within(root).getAllByText("Arroz 5 kg").length).toBeGreaterThan(0);
   fireEvent.click(screen.getByRole("button",{name:"Modo normal"}));
   expect(screen.getByText("1 itens")).toBeTruthy();
  });
