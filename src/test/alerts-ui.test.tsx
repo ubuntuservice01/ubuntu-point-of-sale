@@ -62,7 +62,7 @@ describe("Central de alertas e navegação",()=>{
   render(createElement(AlertCenter,{alerts,readIds:[],onOpen:go,onRead:mark,onUnread:unread,onReadAll:markAll,settings:s.alertSettings,onSaveSettings:settings}));
   expect(screen.getByText("Cliente Teste — fiado vencido")).toBeTruthy();
   expect(screen.getByText("Medicamento exemplo — lote expirado")).toBeTruthy();
-  fireEvent.click(screen.getByRole("button",{name:"Validade"}));
+  fireEvent.click(screen.getByRole("button",{name:/^Validade/}));
   expect(screen.queryByText("Cliente Teste — fiado vencido")).toBeNull();
   fireEvent.click(screen.getByRole("button",{name:"Ver lotes da farmácia"}));
   expect(go).toHaveBeenCalledWith(expect.objectContaining({section:"farmacia",reference:"exp"}));
