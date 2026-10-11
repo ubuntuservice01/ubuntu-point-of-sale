@@ -283,7 +283,6 @@ export function UbuntuApp(){
     <div className="ux-header-popovers">
      <button type="button" className="ux-header-icon" aria-label={"Alertas ("+sidebarAlerts+" por ler)"} aria-expanded={headerPanel==="alerts"} onClick={()=>setHeaderPanel(headerPanel==="alerts"?null:"alerts")}><Bell size={19}/>{sidebarAlerts>0&&<small>{sidebarAlerts>99?"99+":sidebarAlerts}</small>}</button>
      {headerPanel==="alerts"&&<AlertBellPopover alerts={activeAlerts} readIds={data.readAlertIds} onOpen={openAlert} onAll={()=>navigate("alertas")}/>}
-}
     </div>
     <DemoBadge/>
     <div className="ux-header-popovers">
