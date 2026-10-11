@@ -6,7 +6,7 @@ export const NAV_GROUPS = [
  {id:"produtos",label:"Produtos e stock",sections:["products","inventory","purchases","suppliers"]},
  {id:"gestao",label:"Gestão",sections:["expenses","reports","finance","catalogo","encomendas-online","entregas","fidelizacao"]},
  {id:"sectores",label:"Negócios especializados",sections:["farmacia","restaurante","bar","talho","producao","grossistas"]},
- {id:"administracao",label:"Administração demonstrativa",sections:["companies","modules","settings"]}
+ {id:"administracao",label:"Administração demonstrativa",sections:["operators","companies","modules","settings"]}
 ] as const satisfies ReadonlyArray<{id:string;label:string;sections:readonly Section[]}>;
 export type NavGroupId = (typeof NAV_GROUPS)[number]["id"];
 export const allNavigationSections=()=>NAV_GROUPS.flatMap(group=>group.sections) as Section[];

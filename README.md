@@ -31,6 +31,10 @@ bun run dev
 bun run build
 ```
 
+## Operadores e permissões (fase de frontend)
+
+Perfis **gerente, supervisor, operador de caixa e responsável de stock**, com identificação local de operador, entrada/saída, PIN demonstrativo com PBKDF2, menus por perfil, aprovações de devoluções e preços e auditoria local. **Não representa autenticação segura ou isolamento real de dados**; o Supabase ainda não foi ligado. Ver [Manual de Operadores e Permissões](docs/OPERADORES-PERMISSOES-2026-10-11.md).
+
 ## Dinheiro recebido e troco — registo e comprovativo
 
 Nas vendas **em dinheiro**, tanto no POS normal como no **Caixa Rápido**, o operador introduz o valor entregue; o sistema calcula automaticamente o troco e só deixa registar a venda com caixa aberto e dinheiro suficiente. O registo guarda o valor recebido e o troco juntamente com a venda, mostra-os no histórico e imprime-os nos comprovativos térmicos de **58 mm e 80 mm**, incluindo reimpressões. O saldo do caixa continua a considerar **apenas o total vendido**, evitando duplicar receita. Vendas antigas sem esses dados, fiado, cartão, M-Pesa e e-Mola não apresentam montantes fictícios. Estes dados são demonstrativos e não confirmam pagamento efectivo.

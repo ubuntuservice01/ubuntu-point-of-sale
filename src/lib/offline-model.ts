@@ -6,7 +6,7 @@ export const OFFLINE_LOCAL_META_KEY="ubuntu-pos360-offline-meta-v1";
 export const OFFLINE_LOCAL_JOURNAL_KEY="ubuntu-pos360-pending-ops-v1";
 export const OFFLINE_SCHEMA=1;
 export const JOURNALED_COLLECTIONS=[
- "products","customers","sales","credits","suppliers","purchases","supplierPayments",
+ "operators","operatorApprovals","products","customers","sales","credits","suppliers","purchases","supplierPayments",
  "stockMovements","returns","expenses","cashSessions","cashMovements","pharmaLots",
  "pharmaDispenses","serviceTables","serviceOrders","butcherBatches","productionRecipes",
  "productionRuns","wholesaleTiers","wholesaleOrders","onlineOrders","couriers",

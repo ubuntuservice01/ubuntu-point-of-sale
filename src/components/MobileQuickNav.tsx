@@ -23,6 +23,7 @@ export type QuickActionId=(typeof MOBILE_QUICK_ACTIONS)[number]["id"];
 type Props={
  section:Section;cartCount:number;cartTotal:number;cartVisible:boolean;drawerOpen:boolean;
  navigate:(section:Section)=>void;action:(action:QuickActionId)=>void;
+ allowSection?:(section:Section)=>boolean;allowAction?:(action:QuickActionId)=>boolean;
  showCart:()=>void;
 };
 
@@ -42,7 +43,7 @@ function useMobileViewport(){
  },[]);
  return mobile;
 }
-function QuickSheet({close,choose}:{close:()=>void;choose:(action:QuickActionId)=>void}){
+function QuickSheet({close,choose,allowAction=()=>true}:{close:()=>void;choose:(action:QuickActionId)=>void;allowAction?:(action:QuickActionId)=>boolean}){
  const ref=useDialogFocus<HTMLDivElement>(close);
  return <>
   <button className="mobile-quick-scrim" aria-label="Fechar acções rápidas" onClick={close}/>
@@ -52,7 +53,7 @@ function QuickSheet({close,choose}:{close:()=>void;choose:(action:QuickActionId)
     <button type="button" className="mobile-sheet-close" aria-label="Fechar acções rápidas" onClick={close}><X size={21}/></button>
    </header>
    <div className="mobile-quick-grid">
-    {MOBILE_QUICK_ACTIONS.map(item=><button type="button" key={item.id} className="mobile-quick-action" onClick={()=>choose(item.id)}>
+    {MOBILE_QUICK_ACTIONS.filter(item=>allowAction(item.id)).map(item=><button type="button" key={item.id} className="mobile-quick-action" onClick={()=>choose(item.id)}>
      <span className="mobile-quick-icon"><item.icon size={22}/></span>
      <span><strong>{item.label}</strong><small>{item.subtitle}</small></span>
      <ArrowRight size={17} className="mobile-quick-arrow"/>
@@ -62,7 +63,7 @@ function QuickSheet({close,choose}:{close:()=>void;choose:(action:QuickActionId)
   </div>
  </>;
 }
-export function MobileQuickNav({section,cartCount,cartTotal,cartVisible,drawerOpen,navigate,action,showCart}:Props){
+export function MobileQuickNav({section,cartCount,cartTotal,cartVisible,drawerOpen,navigate,action,allowSection=()=>true,allowAction=()=>true,showCart}:Props){
  const mobile=useMobileViewport();
  const [open,setOpen]=useState(false);
  useEffect(()=>setOpen(false),[section,mobile,drawerOpen]);
@@ -74,7 +75,7 @@ export function MobileQuickNav({section,cartCount,cartTotal,cartVisible,drawerOp
    <span><strong>{money(cartTotal)}</strong><ArrowRight size={18}/></span>
   </button>}
   <nav className="mobile-bottom-nav" aria-label="Navegação rápida móvel">
-   {MOBILE_NAV_ITEMS.map(item=><button type="button" key={item.id} className={"mobile-nav-link "+(section===item.id?"is-current":"")}
+   {MOBILE_NAV_ITEMS.filter(item=>allowSection(item.id)).map(item=><button type="button" key={item.id} className={"mobile-nav-link "+(section===item.id?"is-current":"")}
      aria-current={section===item.id?"page":undefined} aria-label={item.id==="pos"&&cartCount>0?"Vender — "+cartCount+" "+(cartCount===1?"artigo":"artigos")+" no carrinho":item.label} onClick={()=>navigate(item.id)}>
     <item.icon size={22} strokeWidth={section===item.id?2.5:2}/>
     <span>{item.label}</span>{item.id==="pos"&&cartCount>0&&<small className="mobile-nav-count">{cartCount}</small>}
@@ -83,6 +84,6 @@ export function MobileQuickNav({section,cartCount,cartTotal,cartVisible,drawerOp
     <Grid3X3 size={22}/><span>Mais</span>
    </button>
   </nav>
-  {open&&<QuickSheet close={()=>setOpen(false)} choose={choose}/>}
+  {open&&<QuickSheet close={()=>setOpen(false)} choose={choose} allowAction={allowAction}/>}
  </>;
 }

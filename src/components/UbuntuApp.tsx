@@ -29,9 +29,12 @@ import {OfflineHeaderStatus,OfflineSettingsPanel} from "./OfflineStatus";
 import {AlertCenter,AlertBellPopover} from "./AlertCenter";
 import {alertSummary,markAlertRead,markAlertUnread,operationalAlerts,pruneReadAlerts,type OperationalAlert} from "../lib/alerts";
 import {ThermalReceiptPanel,ThermalReceiptSettingsPanel} from "./ThermalReceipt";
+import {OperatorLogin,OperatorManagement,OperatorApprovalDialog,OperatorIdentity} from "./OperatorAccess";
+import {BOOTSTRAP_OPERATOR_ID,DEMO_SESSION_KEY,initialDemoSession,roleCan,roleCanSection,firstSection,hasConfiguredPin,sessionFor,verifyPin,canDisableOperator,ROLE_LABELS,type Operator,type DemoSession,type ApprovalScope} from "../lib/operators";
+import type {Dispatch,SetStateAction} from "react";
 import {CircleDollarSign,Truck,ShoppingBag,RefreshCw,ArrowLeftRight,BookOpen,HandCoins as HandCoinsIcon,Pill,ChefHat,GlassWater,Beef,Factory,PackageCheck,Gift,MapPin,Globe2} from "lucide-react";
 
-const ICONS={alertas:Bell,dashboard:LayoutDashboard,pos:ShoppingCart,products:Package,inventory:ArrowLeftRight,customers:Users,cash:Wallet,suppliers:Truck,purchases:ShoppingBag,returns:RefreshCw,expenses:CircleDollarSign,finance:BookOpen,farmacia:Pill,restaurante:ChefHat,bar:GlassWater,talho:Beef,producao:Factory,grossistas:PackageCheck,catalogo:Globe2,"encomendas-online":ShoppingBag,entregas:MapPin,fidelizacao:Gift,companies:Building2,modules:Boxes,reports:ChartNoAxesCombined,settings:Settings};
+const ICONS={operators:Users,alertas:Bell,dashboard:LayoutDashboard,pos:ShoppingCart,products:Package,inventory:ArrowLeftRight,customers:Users,cash:Wallet,suppliers:Truck,purchases:ShoppingBag,returns:RefreshCw,expenses:CircleDollarSign,finance:BookOpen,farmacia:Pill,restaurante:ChefHat,bar:GlassWater,talho:Beef,producao:Factory,grossistas:PackageCheck,catalogo:Globe2,"encomendas-online":ShoppingBag,entregas:MapPin,fidelizacao:Gift,companies:Building2,modules:Boxes,reports:ChartNoAxesCombined,settings:Settings};
 type Notice={message:string;kind:"success"|"error"};
 function shortDate(iso:string){return new Intl.DateTimeFormat("pt-MZ",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}).format(new Date(iso));}
 function todayKey(date=new Date()){return [date.getFullYear(),String(date.getMonth()+1).padStart(2,"0"),String(date.getDate()).padStart(2,"0")].join("-");}
@@ -68,7 +71,61 @@ export function UbuntuApp(){
  const [mobilePosView,setMobilePosView]=useState<"products"|"cart">("products");
  const [quickCashMode,setQuickCashMode]=useState(false);
  const [scannerMode,setScannerMode]=useState<"sale"|"product"|null>(null);
- const {data,setData,loaded,overview,online,resetDemo,downloadBackup}=useOfflineStore();
+ const {data,setData:setStoreData,loaded,overview,online,resetDemo,downloadBackup}=useOfflineStore();
+ const [operatorReady,setOperatorReady]=useState(false);
+ const [session,setSession]=useState<DemoSession|null>(null);
+ const [approvalGrant,setApprovalGrant]=useState<{section:"returns";approverId:string;expires:number}|null>(null);
+ const [approvalRequest,setApprovalRequest]=useState<{scope:ApprovalScope;description:string;onApproved:(approver:Operator)=>void}|null>(null);
+ const activeOperator=data.operators.find(o=>session?.operatorId===o.id&&o.active)??null;
+ const can=(action:Parameters<typeof roleCan>[1])=>Boolean(activeOperator&&roleCan(activeOperator.role,action));
+ const hasReturnGrant=Boolean(approvalGrant&&approvalGrant.expires>Date.now()&&section==="returns");
+ const allowedSection=(target:Section)=>Boolean(activeOperator&&(roleCanSection(activeOperator.role,target)||(target==="returns"&&hasReturnGrant)));
+ const setData:Dispatch<SetStateAction<StoreData>>=(value)=>{
+  if(!activeOperator||!allowedSection(section))return;
+  setStoreData(prev=>{
+   const next=typeof value==="function"?(value as (s:StoreData)=>StoreData)(prev):value;
+   if(next===prev)return prev;
+   const userId=activeOperator.id;
+   const sales=next.sales.map(s=>prev.sales.some(old=>old.id===s.id)?s:{...s,operatorId:userId});
+   const cashSessions=next.cashSessions.map(s=>prev.cashSessions.some(old=>old.id===s.id)?s:{...s,operatorId:userId});
+   const returns=next.returns.map(s=>prev.returns.some(old=>old.id===s.id)?s:{
+    ...s,operatorId:userId,...(hasReturnGrant&&approvalGrant?{approvedBy:approvalGrant.approverId}:{})
+   });
+   return {...next,sales,cashSessions,returns};
+  });
+ };
+ useEffect(()=>{
+  if(!loaded)return;
+  let stored:string|null=null;
+  try{stored=window.sessionStorage.getItem(DEMO_SESSION_KEY)}catch{/* modo sem sessionStorage */}
+  const initial=initialDemoSession(data.operators,stored);
+  setSession(initial);if(initial){const user=data.operators.find(o=>o.id===initial.operatorId);if(user)setSection(firstSection(user.role))}setOperatorReady(true);
+ },[loaded]);
+ useEffect(()=>{
+  if(!operatorReady||!session)return;
+  if(!data.operators.some(o=>o.active&&o.id===session.operatorId)){
+   setSession(null);
+   try{window.sessionStorage.setItem(DEMO_SESSION_KEY,"logout")}catch{/* sessão local indisponível */}
+  }
+ },[data.operators,operatorReady,session]);
+ const loginOperator=async(operator:Operator,pin:string)=>{
+  if(!operator.active)return false;
+  const allowed=hasConfiguredPin(operator)?await verifyPin(operator,pin):
+   operator.id===BOOTSTRAP_OPERATOR_ID&&operator.role==="gerente";
+  if(!allowed)return false;
+  const next=sessionFor(operator);
+  setSession(next);setSection(firstSection(operator.role));setApprovalGrant(null);setApprovalRequest(null);
+  setModal(null);setSettlement(null);setCart([]);setCashEntry("");setCustomerId("");
+  try{window.sessionStorage.setItem(DEMO_SESSION_KEY,JSON.stringify(next))}catch{/* só memória */}
+  return true;
+ };
+ const switchOperator=()=>{
+  setSession(null);setApprovalGrant(null);setApprovalRequest(null);setModal(null);
+  setSettlement(null);setScannerMode(null);setCart([]);setCashEntry("");setCustomerId("");
+  setMobileMenu(false);setHeaderPanel(null);setSection("pos");
+  try{window.sessionStorage.setItem(DEMO_SESSION_KEY,"logout")}catch{/* só memória */}
+ };
+
  useEffect(()=>{try{setQuickCashMode(window.localStorage.getItem("ubuntu-pos360-quick-mode")==="on")}catch{/* preferências indisponíveis */}},[]);
  useEffect(()=>{if(!loaded)return;try{window.localStorage.setItem("ubuntu-pos360-quick-mode",quickCashMode?"on":"off")}catch{/* continuar sem preferências */}},[loaded,quickCashMode]);
  const [notice,setNotice]=useState<Notice|null>(null);
@@ -102,8 +159,21 @@ export function UbuntuApp(){
 
 
  const notify=(message:string,kind:Notice["kind"]="success")=>{setNotice({message,kind})};
- const audit=(action:string,description:string)=>({id:keyId(),createdAt:new Date().toISOString(),action,description});
- const navigate=(next:Section)=>{setSection(next);setAlertReference("");setMobileMenu(false);if(next==="pos")setMobilePosView("products");setQuery("");setProductPage(1);setCategory("Todos");setNotice(null);setHeaderPanel(null);setGlobalSearch("");const group=navGroupFor(next);if(group)setOpenGroups(prev=>({...prev,[group.id]:true}));};
+ const audit=(action:string,description:string)=>({id:keyId(),createdAt:new Date().toISOString(),
+  action,description,operatorId:activeOperator?.id});
+ const navigate=(next:Section,approved=false)=>{
+  if(!activeOperator)return;
+  if(!approved&&!roleCanSection(activeOperator.role,next)){
+   if(next==="returns"&&activeOperator.role==="caixa"){
+    setApprovalRequest({scope:"returns",description:"Solicitar autorização temporária para registar uma devolução.",onApproved:approver=>{
+     setApprovalGrant({section:"returns",approverId:approver.id,expires:Date.now()+120_000});
+     setSection("returns");setModal(null);setHeaderPanel(null);setMobileMenu(false);
+    }});
+   }else notify("O seu perfil não tem permissão para abrir "+sectionLabel(next)+".","error");
+   return;
+  }
+  if(next!=="returns")setApprovalGrant(null);
+  setSection(next);setAlertReference("");setMobileMenu(false);if(next==="pos")setMobilePosView("products");setQuery("");setProductPage(1);setCategory("Todos");setNotice(null);setHeaderPanel(null);setGlobalSearch("");const group=navGroupFor(next);if(group)setOpenGroups(prev=>({...prev,[group.id]:true}));};
  useEffect(()=>{
   const shortCut=(e:KeyboardEvent)=>{
    if(section!=="pos"||modal||e.altKey||e.ctrlKey||e.metaKey||e.shiftKey)return;
@@ -135,6 +205,8 @@ export function UbuntuApp(){
  const cartCount=cart.reduce((n,item)=>n+item.qty,0);
  const showMobileCart=()=>{setMobilePosView("cart");document.getElementById("mobile-pos-tabbar")?.scrollIntoView?.({behavior:"smooth",block:"start"})};
  const quickAction=(action:QuickActionId)=>{
+  if(!activeOperator)return;
+  if(action==="product"&&!can("editProduct")){notify("A criação de produtos requer gerente ou supervisor.","error");return}
   switch(action){
    case "sale":navigate("pos");break;
    case "product":openProduct();break;
@@ -219,6 +291,7 @@ export function UbuntuApp(){
   if(window.confirm("Limpar todos os artigos desta venda?")){cartRef.current=[];setCart([]);notify("Venda actual limpa.")}
  }
  function checkout(){
+  if(!can("sell")){notify("O seu perfil não está autorizado a vender.","error");return;}
   if(!cart.length){notify("Adicione produtos à venda.","error");return;}
   if(payment==="fiado"&&!customerId){notify("Seleccione o cliente para registar o fiado.","error");return;}
   if(payment==="fiado"&&!canGrantCredit(data.customers.find(c=>c.id===customerId),cartTotal)){notify("A venda ultrapassa o limite de fiado deste cliente.","error");return;}
@@ -226,11 +299,22 @@ export function UbuntuApp(){
   if(payment==="dinheiro"&&!activeCashSession(data)){notify("Abra o caixa antes de receber uma venda em dinheiro.","error");return;}
   if(payment==="dinheiro"&&!cashTender.valid){notify(cashTender.reason??"Verifique o valor recebido.","error");return;}
   if(cart.some(c=>!data.products.some(p=>p.id===c.productId&&p.active&&!data.pharmaLots.some(l=>l.productId===p.id)&&p.stock-reservedQty(data,p.id)>=c.qty))){notify("O stock mudou. Reveja as quantidades.","error");return;}
-  const sale:Sale={id:"VD-"+Date.now().toString(36).toUpperCase()+"-"+keyId().slice(0,6).toUpperCase(),createdAt:new Date().toISOString(),items:snapshotSaleItems(data,cart.map(i=>({...i}))),total:cartTotal,method:payment,...(payment==="dinheiro"?{cashReceived:cashTender.received,cashChange:cashTender.change}:{}),...(customerId?{customerId,...(payment==="fiado"&&creditDueDate?{dueDate:creditDueDate}:{})}:{}),...(payment==="dinheiro"&&activeCashSession(data)?{cashSessionId:activeCashSession(data)!.id}:{})};
+  const sale:Sale={operatorId:activeOperator?.id,id:"VD-"+Date.now().toString(36).toUpperCase()+"-"+keyId().slice(0,6).toUpperCase(),createdAt:new Date().toISOString(),items:snapshotSaleItems(data,cart.map(i=>({...i}))),total:cartTotal,method:payment,...(payment==="dinheiro"?{cashReceived:cashTender.received,cashChange:cashTender.change}:{}),...(customerId?{customerId,...(payment==="fiado"&&creditDueDate?{dueDate:creditDueDate}:{})}:{}),...(payment==="dinheiro"&&activeCashSession(data)?{cashSessionId:activeCashSession(data)!.id}:{})};
   setData(old=>awardLoyaltyForSale({...old,sales:[sale,...old.sales],stockMovements:[...saleStockMovements(old,sale),...old.stockMovements],products:old.products.map(p=>{const item=cart.find(i=>i.productId===p.id);return item?{...p,stock:p.stock-item.qty}:p}),customers:old.customers.map(c=>c.id===customerId&&payment==="fiado"?{...c,debt:roundMoney(c.debt+cartTotal)}:c),credits:payment==="fiado"?[...old.credits,{id:keyId(),customerId,kind:"fiado" as const,amount:cartTotal,createdAt:sale.createdAt,saleId:sale.id,...(creditDueDate?{dueDate:creditDueDate}:{})}]:old.credits,audits:[audit(payment==="fiado"?"Venda a fiado":"Venda simulada",sale.id+" · "+money(sale.total)+" · "+paymentText[payment]),...old.audits]},sale));
   setCart([]);setCustomerId("");setCreditDueDate("");setPayment("dinheiro");setCashEntry("");setReceipt(sale);setReceiptFresh(true);setModal("receipt");notify("Venda registada na demonstração.");
  }
- function saveProduct(e:FormEvent<HTMLFormElement>){e.preventDefault();const name=productForm.name.trim(),sku=productForm.sku.trim().toUpperCase(),barcode=normalizeBarcode(productForm.barcode),price=Number(productForm.price),purchasePrice=Number(productForm.purchasePrice),stock=Number(productForm.stock);
+ function saveProduct(e:FormEvent<HTMLFormElement>){
+  e.preventDefault();
+  if(!can("editProduct")){notify("O seu perfil não pode editar produtos.","error");return;}
+  const requestedPrice=roundMoney(Number(productForm.price));
+  const requestedCost=roundMoney(Number(productForm.purchasePrice));
+  if(!can("editPrice")&&(!editingProduct||editingProduct.price!==requestedPrice||editingProduct.purchasePrice!==requestedCost)){
+   setApprovalRequest({scope:"price",description:"Confirmar "+productForm.name.trim()+" com preço de venda "+money(requestedPrice)+" e custo "+money(requestedCost)+".",onApproved:()=>commitProduct()});
+   return;
+  }
+  commitProduct();
+ }
+ function commitProduct(){const name=productForm.name.trim(),sku=productForm.sku.trim().toUpperCase(),barcode=normalizeBarcode(productForm.barcode),price=Number(productForm.price),purchasePrice=Number(productForm.purchasePrice),stock=Number(productForm.stock);
   if(!name||!sku||!productForm.category.trim()||!productForm.unit.trim()||!validUnitPrice(price)||!validUnitPrice(purchasePrice)||!(["kg","L"].includes(productForm.unit)?Number.isFinite(stock)&&Math.round(stock*1000)===stock*1000:Number.isInteger(stock))||stock<0){notify("Preencha correctamente os dados do produto.","error");return;}
   if(barcode&&!validBarcode(barcode)){notify("Introduza um código de barras válido (4 a 64 caracteres sem espaços).","error");return;}
   const collision=barcodeCollision(data.products,sku,barcode,editingProduct?.id);
@@ -240,17 +324,17 @@ export function UbuntuApp(){
   const prod:Product={id:editingProduct?.id??keyId(),name,sku,...(barcode?{barcode}:{}),category:productForm.category.trim(),unit:productForm.unit.trim(),price:roundMoney(price),purchasePrice:roundMoney(purchasePrice),stock,active:true};const previousStock=editingProduct?.stock??0;const delta=stock-previousStock;
   setData(old=>({...old,products:editingProduct?old.products.map(p=>p.id===editingProduct.id?prod:p):[prod,...old.products],stockMovements:delta!==0?[{id:keyId(),productId:prod.id,kind:editingProduct?"ajuste" as const:"entrada" as const,change:delta,createdAt:new Date().toISOString(),reference:editingProduct?"PROD-EDIT":"PROD-NEW",note:"Stock inicial ou edição do catálogo",balanceAfter:stock},...old.stockMovements]:old.stockMovements,audits:[audit(editingProduct?"Produto actualizado":"Produto criado",name),...old.audits]}));setModal(null);setEditingProduct(null);setProductPage(1);setQuery("");notify(editingProduct?"Produto actualizado.":"Produto criado.");
  }
- function openProduct(p?:Product){setEditingProduct(p??null);setProductForm(p?{name:p.name,sku:p.sku,barcode:p.barcode??"",category:p.category,unit:p.unit,price:String(p.price),purchasePrice:p.purchasePrice===undefined?"":String(p.purchasePrice),stock:String(p.stock)}:{name:"",sku:"",barcode:"",category:"Mercearia",unit:"un.",purchasePrice:"",price:"",stock:""});setModal("product");}
- function disableProduct(id:string){const p=data.products.find(x=>x.id===id);if(!p)return;if(reservedQty(data,id)>0){notify("Este produto está reservado para comandas ou encomendas e não pode ser desactivado.","error");return;}if(!window.confirm("Desactivar "+p.name+"?"))return;setData(old=>({...old,products:old.products.map(x=>x.id===id?{...x,active:false}:x),audits:[audit("Produto desactivado",p.name),...old.audits]}));notify("Produto desactivado.");}
+ function openProduct(p?:Product){if(!can("editProduct")){notify("O seu perfil não pode editar produtos.","error");return;}setEditingProduct(p??null);setProductForm(p?{name:p.name,sku:p.sku,barcode:p.barcode??"",category:p.category,unit:p.unit,price:String(p.price),purchasePrice:p.purchasePrice===undefined?"":String(p.purchasePrice),stock:String(p.stock)}:{name:"",sku:"",barcode:"",category:"Mercearia",unit:"un.",purchasePrice:"",price:"",stock:""});setModal("product");}
+ function disableProduct(id:string){if(!can("editPrice")){notify("A desactivação de produtos exige autorização do gerente.","error");return;}const p=data.products.find(x=>x.id===id);if(!p)return;if(reservedQty(data,id)>0){notify("Este produto está reservado para comandas ou encomendas e não pode ser desactivado.","error");return;}if(!window.confirm("Desactivar "+p.name+"?"))return;setData(old=>({...old,products:old.products.map(x=>x.id===id?{...x,active:false}:x),audits:[audit("Produto desactivado",p.name),...old.audits]}));notify("Produto desactivado.");}
  function addCustomer(e:FormEvent<HTMLFormElement>){e.preventDefault();const name=customerForm.name.trim(),phone=customerForm.phone.trim(),limit=customerForm.creditLimit.trim()===""?null:Number(customerForm.creditLimit);if(name.length<2){notify("Introduza o nome do cliente.","error");return;}if(limit!==null&&(!Number.isFinite(limit)||limit<0)){notify("O limite de fiado deve ser zero ou um valor positivo.","error");return;}const newCustomer={id:keyId(),name,phone,debt:0,creditLimit:limit};setData(old=>({...old,customers:[newCustomer,...old.customers],audits:[audit("Cliente registado",name),...old.audits]}));setModal(null);setCustomerForm({name:"",phone:"",creditLimit:""});notify("Cliente registado.");}
- function payDebt(e:FormEvent<HTMLFormElement>){e.preventDefault();if(!settlement)return;const customer=data.customers.find(c=>c.id===settlement.id),amount=roundMoney(Number(settlement.amount));if(!customer||!Number.isFinite(amount)||amount<=0||amount>customer.debt){notify("Introduza um valor válido até ao saldo em dívida.","error");return;}if(settlement.method==="dinheiro"&&!activeCashSession(data)){notify("Abra o caixa antes de registar um pagamento em dinheiro.","error");return;}const entry={id:keyId(),customerId:customer.id,kind:"pagamento" as const,amount,createdAt:new Date().toISOString(),method:settlement.method,note:settlement.note.trim(),...(settlement.method==="dinheiro"&&activeCashSession(data)?{cashSessionId:activeCashSession(data)!.id}:{})};setData(old=>awardLoyaltyForCreditPayment({...old,customers:old.customers.map(c=>c.id===customer.id?{...c,debt:roundMoney(c.debt-amount)}:c),credits:[...old.credits,entry],audits:[audit("Abatimento demonstrativo de fiado",customer.name+" · "+money(amount)+" · "+paymentText[entry.method]),...old.audits]},entry.id));setSettlement(null);notify("Pagamento parcial registado na demonstração.");}
+ function payDebt(e:FormEvent<HTMLFormElement>){e.preventDefault();if(!can("payCredit"))return;if(!settlement)return;const customer=data.customers.find(c=>c.id===settlement.id),amount=roundMoney(Number(settlement.amount));if(!customer||!Number.isFinite(amount)||amount<=0||amount>customer.debt){notify("Introduza um valor válido até ao saldo em dívida.","error");return;}if(settlement.method==="dinheiro"&&!activeCashSession(data)){notify("Abra o caixa antes de registar um pagamento em dinheiro.","error");return;}const entry={id:keyId(),customerId:customer.id,kind:"pagamento" as const,amount,createdAt:new Date().toISOString(),method:settlement.method,note:settlement.note.trim(),...(settlement.method==="dinheiro"&&activeCashSession(data)?{cashSessionId:activeCashSession(data)!.id}:{})};setData(old=>awardLoyaltyForCreditPayment({...old,customers:old.customers.map(c=>c.id===customer.id?{...c,debt:roundMoney(c.debt-amount)}:c),credits:[...old.credits,entry],audits:[audit("Abatimento demonstrativo de fiado",customer.name+" · "+money(amount)+" · "+paymentText[entry.method]),...old.audits]},entry.id));setSettlement(null);notify("Pagamento parcial registado na demonstração.");}
  function saveCompany(e:FormEvent<HTMLFormElement>){e.preventDefault();const name=companyForm.name.trim();if(name.length<3){notify("Indique o nome da empresa.","error");return;}const slug=slugify(name);if(!slug){notify("Nome inválido para gerar identificador.","error");return;}if(data.companies.some(c=>c.slug===slug&&c.id!==editingCompany?.id)){notify("Já existe uma empresa com esse identificador.","error");return;}
   const co:Company={id:editingCompany?.id??keyId(),name,slug,sector:companyForm.sector,status:companyForm.status,modules:editingCompany?.modules??["POS e caixa","Produtos e stock"]};
   setData(old=>({...old,companies:editingCompany?old.companies.map(c=>c.id===editingCompany.id?co:c):[co,...old.companies],audits:[audit(editingCompany?"Empresa actualizada":"Empresa registada",name+" (simulação)"),...old.audits]}));setEditingCompany(null);setModal(null);notify("Empresa guardada na demonstração. Nenhum domínio foi activado.");
  }
  function openCompany(co?:Company){setEditingCompany(co??null);setCompanyForm(co?{name:co.name,sector:co.sector,status:co.status}:{name:"",sector:"Loja",status:"teste"});setModal("company");}
  function toggleCompanyModule(id:string,module:string){setData(old=>({...old,companies:old.companies.map(c=>c.id===id?{...c,modules:c.modules.includes(module)?c.modules.filter(m=>m!==module):[...c.modules,module]}:c),audits:[audit("Módulos ajustados","Alteração de demonstração · "+module),...old.audits]}));}
- const searchResults=globalSearch.trim()?SECTIONS.filter(item=>item.label.toLocaleLowerCase("pt").includes(globalSearch.trim().toLocaleLowerCase("pt"))).slice(0,7):[];
+ const searchResults=globalSearch.trim()?SECTIONS.filter(item=>allowedSection(item.id)&&item.label.toLocaleLowerCase("pt").includes(globalSearch.trim().toLocaleLowerCase("pt"))).slice(0,7):[];
  const activeGroup=navGroupFor(section);
  const activeAlerts=useMemo(()=>operationalAlerts(data,clock),[data,clock]);
  const alertCounts=useMemo(()=>alertSummary(activeAlerts,data.readAlertIds),[activeAlerts,data.readAlertIds]);
@@ -274,7 +358,11 @@ export function UbuntuApp(){
   if(alert.kind==="orders")setAlertReference(alert.reference);
  };
  const sidebarAlerts=alertCounts.unread;
- const menuSections=NAV_GROUPS.map(group=>({...group,items:group.sections.map(id=>({id,label:sectionLabel(id),Icon:ICONS[id]}))}));
+ const menuSections=NAV_GROUPS.map(group=>({...group,items:group.sections
+  .filter(id=>allowedSection(id)).map(id=>({id,label:sectionLabel(id),Icon:ICONS[id]}))}))
+  .filter(group=>group.items.length>0);
+ const operatorSectionAllowed=allowedSection(section);
+ if(loaded&&operatorReady&&!activeOperator)return <OperatorLogin operators={data.operators} onLogin={loginOperator}/>;
  return <div className={"ubuntu-shell "+(section==="pos"&&quickCashMode?"qc-mode-on":"")} aria-busy={!loaded}>
   {!loaded&&<div className="offline-boot-overlay" role="status"><span>A recuperar os dados do POS neste dispositivo…</span></div>}
   <aside className={"sidebar "+(collapsed?"is-collapsed ":"")+(mobileMenu?"mobile-open":"")}>
@@ -287,7 +375,7 @@ export function UbuntuApp(){
       {(collapsed||compactLayout||openGroups[group.id])&&<div className="ux-nav-group-items">{group.items.map(item=><button type="button" key={item.id} title={item.label} aria-current={section===item.id?"page":undefined} className={"nav-link "+(section===item.id?"selected":"")} onClick={()=>navigate(item.id)}><item.Icon size={18} strokeWidth={2}/>{!collapsed&&<span>{item.label}</span>}{item.id==="companies"&&!collapsed&&<small className="nav-counter">{data.companies.length}</small>}</button>)}</div>}
     </div>)}
    </nav>
-   <div className="sidebar-foot">{!collapsed&&<button className="ux-sidebar-user" onClick={()=>navigate("settings")}><span className="ux-sidebar-avatar">US</span><span><strong>Sessão de teste</strong><small>Ver definições</small></span><ChevronRight size={15}/></button>}<button className="collapse-toggle" onClick={()=>setCollapsed(!collapsed)} aria-label={collapsed?"Expandir menu":"Recolher menu"} title={collapsed?"Expandir menu":"Recolher menu"}><Menu size={19}/>{!collapsed&&"Recolher menu"}</button></div>
+   <div className="sidebar-foot">{!collapsed&&activeOperator&&<OperatorIdentity operator={activeOperator} onSwitch={switchOperator} onManage={()=>navigate("operators")}/>}<button className="collapse-toggle" onClick={()=>setCollapsed(!collapsed)} aria-label={collapsed?"Expandir menu":"Recolher menu"} title={collapsed?"Expandir menu":"Recolher menu"}><Menu size={19}/>{!collapsed&&"Recolher menu"}</button></div>
   </aside>
   {mobileMenu&&<button className="mobile-screen" aria-label="Fechar menu" onClick={()=>setMobileMenu(false)}/>}
   <div className="workspace"><header className="topbar ux-topbar">
@@ -306,13 +394,33 @@ export function UbuntuApp(){
     <OfflineHeaderStatus online={online} overview={overview} onDetails={()=>navigate("settings")}/>
     <DemoBadge/>
     <div className="ux-header-popovers">
-     <button type="button" className="ux-profile-button" aria-expanded={headerPanel==="profile"} aria-label="Perfil de demonstração" title="Perfil de demonstração" onClick={()=>setHeaderPanel(headerPanel==="profile"?null:"profile")}>US</button>
-     {headerPanel==="profile"&&<div className="ux-header-popover ux-profile-popover" role="region" aria-label="Perfil de demonstração"><h3>Ambiente de testes</h3><p>Não existe sessão autenticada nem permissões reais.</p><button onClick={()=>navigate("settings")}><Settings size={17}/><span>Definições</span><ChevronRight size={16}/></button><Link to="/empresa" search={{tenant:undefined}} onClick={()=>setHeaderPanel(null)}><Building2 size={17}/> Painel de empresa (demo) <ArrowUpRight size={15}/></Link></div>}
+     <button type="button" className="ux-profile-button" aria-expanded={headerPanel==="profile"} aria-label="Perfil do operador" title="Perfil do operador" onClick={()=>setHeaderPanel(headerPanel==="profile"?null:"profile")}>{activeOperator?.name.slice(0,2).toUpperCase()??"US"}</button>
+     {headerPanel==="profile"&&<div className="ux-header-popover ux-profile-popover" role="region" aria-label="Perfil do operador">
+       <h3>{activeOperator?.name}</h3><p>{activeOperator?ROLE_LABELS[activeOperator.role]:"Sem operador"} · Sessão local demonstrativa, não autenticação real.</p>
+       {can("manageOperators")&&<button type="button" onClick={()=>navigate("operators")}><Users size={17}/> Gerir operadores <ChevronRight size={16}/></button>}
+       {can("manageSettings")&&<button type="button" onClick={()=>navigate("settings")}><Settings size={17}/> Definições <ChevronRight size={16}/></button>}
+       <button type="button" onClick={switchOperator}><ShieldCheck size={17}/> Sair ou trocar de operador <ChevronRight size={16}/></button>
+      </div>}
     </div>
    </div>
   </header>
   <main className="page-area">
    {notice&&<div role={notice.kind==="error"?"alert":"status"} className={"toast "+notice.kind}><span>{notice.message}</span><IconButton label="Fechar aviso" onClick={()=>setNotice(null)}><X size={16}/></IconButton></div>}
+   {!operatorSectionAllowed&&loaded&&<section className="op-panel" role="alert"><h2>Sem permissão para esta secção</h2><p>Seleccione uma opção autorizada para o seu perfil.</p><button type="button" className="op-primary" onClick={()=>navigate(firstSection(activeOperator?.role??"caixa"))}>Ir para a minha área</button></section>}
+   {operatorSectionAllowed&&<>
+   {section==="operators"&&activeOperator?.role==="gerente"&&<OperatorManagement
+     operators={data.operators} actorId={activeOperator.id}
+     onSave={operator=>{
+      setStoreData(old=>({...old,
+       operators:old.operators.some(o=>o.id===operator.id)?old.operators.map(o=>o.id===operator.id?operator:o):[...old.operators,operator],
+       audits:[{id:keyId(),action:"Operador configurado",description:operator.name+" · "+ROLE_LABELS[operator.role],createdAt:new Date().toISOString(),operatorId:activeOperator.id},...old.audits]
+      }));
+     }}
+     onToggle={id=>{
+      if(!canDisableOperator(data.operators,id,activeOperator.id))return;
+      setStoreData(old=>({...old,operators:old.operators.map(o=>o.id===id?{...o,active:!o.active,updatedAt:new Date().toISOString()}:o),
+       audits:[{id:keyId(),createdAt:new Date().toISOString(),action:"Estado de operador alterado",description:id,operatorId:activeOperator.id},...old.audits]}));
+     }}/>}
    {section==="alertas"&&<AlertCenter alerts={activeAlerts} readIds={data.readAlertIds} settings={data.alertSettings}
     onOpen={openAlert} onRead={markAsRead} onUnread={markAsUnread} onReadAll={markAllAsRead}
     onSaveSettings={settings=>setData(old=>({...old,alertSettings:settings,readAlertIds:[]}))}/>}
@@ -321,6 +429,7 @@ export function UbuntuApp(){
  right={<div className="qc-mode-controls">
   <button type="button" className={"qc-toggle "+(quickCashMode?"is-on":"")} aria-pressed={quickCashMode}
    onClick={()=>{setQuickCashMode(x=>!x);setMobilePosView("products")}}><Keyboard size={19}/>{quickCashMode?"Modo normal":"Modo Caixa Rápido"}</button>
+  {activeOperator?.role==="caixa"&&<button type="button" className="op-return-request" onClick={()=>navigate("returns")}><ShieldCheck size={16}/> Solicitar devolução</button>}
   <button className="status-chip" onClick={()=>navigate("cash")}><span/>{activeCashSession(data)?"Caixa aberto":"Abrir caixa"} <ChevronRight size={14}/></button>
  </div>}/>{quickCashMode?<QuickCash
   products={data.products} cart={cart} payment={payment} customers={data.customers} customerId={customerId}
@@ -362,7 +471,8 @@ export function UbuntuApp(){
   {cashEntry&&!cashTender.valid&&<p className="validation-warning" role="alert">{cashTender.reason}</p>}
  </div>}
  <button className="primary-btn checkout-btn" onClick={checkout} disabled={!cart.length||(payment==="dinheiro"&&(!cashTender.valid||!activeCashSession(data)))||(payment==="fiado"&&(!customerId||!canGrantCredit(data.customers.find(c=>c.id===customerId),cartTotal)))}><CheckCircle2 size={19}/> Registar venda · {money(cartTotal)}</button><p className="safe-note"><Info size={15}/> Registo local para testes. Não efectua cobranças reais.</p></div></aside></div></>}</>}
-   {section==="products"&&<><PageHeading title="Produtos e stock" kicker="INVENTÁRIO" subtitle="Registe o preço de compra, o preço de venda e o stock de cada produto." right={<button className="primary-btn" onClick={()=>openProduct()}><Plus size={18}/> Adicionar produto</button>}/><section className="surface table-panel"><div className="table-tools"><div className="input-search"><Search size={18}/><input placeholder="Pesquisar produtos…" aria-label="Pesquisar produtos" value={query} onChange={e=>{setQuery(e.target.value);setProductPage(1)}}/></div><div className="ux-product-table-options"><label>Ordenar<select aria-label="Ordenar produtos" value={productSort} onChange={e=>{setProductSort(e.target.value as "nome"|"preco"|"stock");setProductPage(1)}}><option value="nome">Nome</option><option value="preco">Maior preço</option><option value="stock">Menor stock</option></select></label><div className="table-counter">{displayedProducts.length} de {effectiveProducts.length} produtos</div></div></div><div className="table-scroll"><table className="data-table"><thead><tr><th>Produto</th><th>Código</th><th>Categoria</th><th>Preço de compra</th><th>Preço de venda</th><th>Diferença bruta/un.</th><th>Stock</th><th className="right">Acções</th></tr></thead><tbody>{productsOnPage.map(p=><tr key={p.id}><td><span className="table-product-icon"><Package size={18}/></span><b>{p.name}</b></td><td>{p.sku}{p.barcode&&<small className="product-barcode-display">Barras: {p.barcode}</small>}</td><td>{p.category}</td><td className="num-text">{p.purchasePrice===undefined?"Por definir":money(p.purchasePrice)}</td><td className="num-text">{money(p.price)}</td><td className="num-text">{grossUnitDifference(p)===null?"—":<span className={grossUnitDifference(p)!<0?"product-pricing-negative":"product-pricing-positive"}>{money(grossUnitDifference(p)!)}</span>}</td><td><span className={"table-state "+(p.stock<=10?"warning":"good")}>{p.stock} {p.unit}</span></td><td className="right"><button className="small-btn" onClick={()=>openProduct(p)}>Editar</button><IconButton label={"Desactivar "+p.name} onClick={()=>disableProduct(p.id)}><Trash2 size={16}/></IconButton></td></tr>)}</tbody></table></div>{displayedProducts.length>10&&<div className="ux-pagination"><span>Página {Math.min(productPage,productPages)} de {productPages}</span><button className="outline-btn" disabled={productPage<=1} onClick={()=>setProductPage(p=>Math.max(1,p-1))}>Anterior</button><button className="outline-btn" disabled={productPage>=productPages} onClick={()=>setProductPage(p=>Math.min(productPages,p+1))}>Seguinte</button></div>}{displayedProducts.length===0&&<Empty icon={Package} title="Sem produtos" description="Adicione o primeiro produto ou altere a pesquisa."/>}</section></>}
+   {section==="products"&&<><PageHeading title="Produtos e stock" kicker="INVENTÁRIO" subtitle="Registe o preço de compra, o preço de venda e o stock de cada produto."
+   right={can("editProduct")?<button className="primary-btn" onClick={()=>openProduct()}><Plus size={18}/> Adicionar produto</button>:<span className="op-readonly-note">Consulta de stock · só leitura</span>}/><section className="surface table-panel"><div className="table-tools"><div className="input-search"><Search size={18}/><input placeholder="Pesquisar produtos…" aria-label="Pesquisar produtos" value={query} onChange={e=>{setQuery(e.target.value);setProductPage(1)}}/></div><div className="ux-product-table-options"><label>Ordenar<select aria-label="Ordenar produtos" value={productSort} onChange={e=>{setProductSort(e.target.value as "nome"|"preco"|"stock");setProductPage(1)}}><option value="nome">Nome</option><option value="preco">Maior preço</option><option value="stock">Menor stock</option></select></label><div className="table-counter">{displayedProducts.length} de {effectiveProducts.length} produtos</div></div></div><div className="table-scroll"><table className="data-table"><thead><tr><th>Produto</th><th>Código</th><th>Categoria</th><th>Preço de compra</th><th>Preço de venda</th><th>Diferença bruta/un.</th><th>Stock</th><th className="right">Acções</th></tr></thead><tbody>{productsOnPage.map(p=><tr key={p.id}><td><span className="table-product-icon"><Package size={18}/></span><b>{p.name}</b></td><td>{p.sku}{p.barcode&&<small className="product-barcode-display">Barras: {p.barcode}</small>}</td><td>{p.category}</td><td className="num-text">{p.purchasePrice===undefined?"Por definir":money(p.purchasePrice)}</td><td className="num-text">{money(p.price)}</td><td className="num-text">{grossUnitDifference(p)===null?"—":<span className={grossUnitDifference(p)!<0?"product-pricing-negative":"product-pricing-positive"}>{money(grossUnitDifference(p)!)}</span>}</td><td><span className={"table-state "+(p.stock<=10?"warning":"good")}>{p.stock} {p.unit}</span></td><td className="right">{can("editProduct")&&<button className="small-btn" onClick={()=>openProduct(p)}>Editar</button>}{can("editPrice")&&<IconButton label={"Desactivar "+p.name} onClick={()=>disableProduct(p.id)}><Trash2 size={16}/></IconButton>}</td></tr>)}</tbody></table></div>{displayedProducts.length>10&&<div className="ux-pagination"><span>Página {Math.min(productPage,productPages)} de {productPages}</span><button className="outline-btn" disabled={productPage<=1} onClick={()=>setProductPage(p=>Math.max(1,p-1))}>Anterior</button><button className="outline-btn" disabled={productPage>=productPages} onClick={()=>setProductPage(p=>Math.min(productPages,p+1))}>Seguinte</button></div>}{displayedProducts.length===0&&<Empty icon={Package} title="Sem produtos" description="Adicione o primeiro produto ou altere a pesquisa."/>}</section></>}
    {section==="customers"&&<>
     <PageHeading title="Fiado e dívidas" kicker="CLIENTES" subtitle="Saiba quem deve, quando deve pagar e o que já foi recebido." right={<button className="primary-btn" onClick={()=>setModal("customer")}><Plus size={18}/> Novo cliente</button>}/>
     <div className="credit-overview">
@@ -390,9 +500,28 @@ export function UbuntuApp(){
    {section==="modules"&&<><PageHeading title="Módulos da plataforma" kicker="FUNCIONALIDADES" subtitle="Escolha os recursos adequados a cada tipo de negócio."/><div className="modules-notice"><Info size={18}/><span>Os módulos de farmácias, restaurantes, bares, talhos, produção, grossistas, catálogo online, encomendas digitais, entregas e fidelização já podem ser testados no frontend.</span></div><div className="module-grid">{MODULES.map((m,i)=>{const iClass=i%6;return <article className="surface module-card" key={m}><span className={"module-icon module-"+iClass}><Boxes size={25}/></span><h3>{m}</h3><p>{moduleDescription(m)}</p></article>})}</div></>}
    {section==="reports"&&<><ProfitabilityReports data={data} go={navigate}/><section className="surface table-panel"><div className="panel-head"><div><h2>Histórico de vendas</h2><p>Dados locais — não constituem facturação</p></div></div>{data.sales.length===0?<Empty icon={Receipt} title="Nenhuma venda registada" description="As vendas simuladas realizadas no ponto de venda aparecem aqui." action={<button className="primary-btn" onClick={()=>navigate("pos")}>Ir para o ponto de venda</button>}/>:<div className="table-scroll"><table className="data-table"><thead><tr><th>Referência</th><th>Data</th><th>Artigos</th><th>Pagamento</th><th>Total</th><th>Valor recebido</th><th>Troco</th><th>Comprovativo</th></tr></thead><tbody>{data.sales.map(s=><tr key={s.id}><td><b>{s.id}</b></td><td>{shortDate(s.createdAt)}</td><td>{s.items.reduce((sum,p)=>sum+p.qty,0)}</td><td>{paymentText[s.method]}</td><td className="num-text">{money(s.total)}</td><td className="num-text">{(()=>{const cash=cashTenderDetails(s);return cash?money(cash.received):"—"})()}</td><td className="num-text">{(()=>{const cash=cashTenderDetails(s);return cash?money(cash.change):"—"})()}</td><td><button type="button" className="thermal-history-print" aria-label={"Reimprimir comprovativo "+s.id} onClick={()=>{setReceipt(s);setReceiptFresh(false);setModal("receipt")}}><Printer size={15}/> Imprimir</button></td></tr>)}</tbody></table></div>}</section></>}
    {(["cash","suppliers","purchases","inventory","returns","expenses","finance"] as const).includes(section as "cash")&&<CommercialOperations section={section as "cash"|"suppliers"|"purchases"|"inventory"|"returns"|"expenses"|"finance"} data={data} onChange={setData} notify={notify} go={navigate}/>}
-   {section==="settings"&&<><PageHeading title="Definições" kicker="CONFIGURAÇÃO" subtitle="Consulte o idioma, a moeda e as informações desta demonstração."/><section className="surface settings-panel"><div className="settings-heading"><div className="settings-icon"><SlidersHorizontal size={24}/></div><div><h2>Ambiente de demonstração</h2><p>Os dados são guardados apenas neste navegador e não são partilhados com outras empresas.</p></div></div><div className="setting-line"><div><b>Moeda principal</b><span>Metical moçambicano</span></div><strong>MZN</strong></div><div className="setting-line"><div><b>Idioma</b><span>Português de Moçambique</span></div><strong>pt-MZ</strong></div><div className="setting-line"><div><b>Ambiente</b><span>Sem ligação ao Supabase ou pagamentos externos</span></div><span className="table-state warning">Demonstração</span></div><OfflineSettingsPanel online={online} loaded={loaded} overview={overview} downloadBackup={downloadBackup}/><ThermalReceiptSettingsPanel value={data.receiptSettings} onSave={settings=>{setData(old=>({...old,receiptSettings:settings}));notify("Configuração dos comprovativos guardada neste navegador.")}}/><div className="danger-zone"><h3>Limpar dados da demonstração</h3><p>Repõe os produtos de exemplo e apaga clientes, empresas e vendas simuladas guardados neste navegador.</p><button className="danger-btn" onClick={()=>{if(window.confirm("Tem a certeza de que pretende apagar os dados desta demonstração?")){resetDemo();setCart([]);notify("Reposição da demonstração solicitada. Aguarde a confirmação da gravação local.");}}}><Trash2 size={16}/> Repor demonstração</button></div></section></>}
+   {section==="settings"&&can("manageSettings")&&<><PageHeading title="Definições" kicker="CONFIGURAÇÃO" subtitle="Consulte o idioma, a moeda e as informações desta demonstração."/><section className="surface settings-panel"><div className="settings-heading"><div className="settings-icon"><SlidersHorizontal size={24}/></div><div><h2>Ambiente de demonstração</h2><p>Os dados são guardados apenas neste navegador e não são partilhados com outras empresas.</p></div></div><div className="setting-line"><div><b>Moeda principal</b><span>Metical moçambicano</span></div><strong>MZN</strong></div><div className="setting-line"><div><b>Idioma</b><span>Português de Moçambique</span></div><strong>pt-MZ</strong></div><div className="setting-line"><div><b>Ambiente</b><span>Sem ligação ao Supabase ou pagamentos externos</span></div><span className="table-state warning">Demonstração</span></div><OfflineSettingsPanel online={online} loaded={loaded} overview={overview} downloadBackup={downloadBackup}/><ThermalReceiptSettingsPanel value={data.receiptSettings} onSave={settings=>{setData(old=>({...old,receiptSettings:settings}));notify("Configuração dos comprovativos guardada neste navegador.")}}/><div className="danger-zone"><h3>Limpar dados da demonstração</h3><p>Repõe os produtos de exemplo e apaga clientes, empresas e vendas simuladas guardados neste navegador.</p><button className="danger-btn" onClick={()=>{if(window.confirm("Tem a certeza de que pretende apagar os dados desta demonstração?")){resetDemo();setCart([]);notify("Reposição da demonstração solicitada. Aguarde a confirmação da gravação local.");}}}><Trash2 size={16}/> Repor demonstração</button></div></section></>}
+   </>}
    <footer className="app-footer">Uma plataforma desenvolvida pela <b>Ubuntu Service, Lda.</b> <span>·</span> Criando pontes entre o físico e o digital.</footer>
-  </main><MobileQuickNav section={section} cartCount={cartCount} cartTotal={cartTotal} cartVisible={quickCashMode||mobilePosView==="cart"} drawerOpen={mobileMenu} navigate={navigate} action={quickAction} showCart={showMobileCart}/></div>
+  </main><MobileQuickNav allowSection={allowedSection}
+    allowAction={action=>{const targets:Record<QuickActionId,Section>={sale:"pos",product:"products",customer:"customers",debt:"customers",purchase:"purchases",cash:"cash",alerts:"alertas"};return allowedSection(targets[action])&&(action!=="product"||can("editProduct"))}}
+    section={section} cartCount={cartCount} cartTotal={cartTotal} cartVisible={quickCashMode||mobilePosView==="cart"} drawerOpen={mobileMenu} navigate={navigate} action={quickAction} showCart={showMobileCart}/></div>
+  {approvalRequest&&activeOperator&&<OperatorApprovalDialog key={approvalRequest.scope+"-"+approvalRequest.description}
+    scope={approvalRequest.scope} requesterId={activeOperator.id}
+    description={approvalRequest.description} operators={data.operators}
+    onCancel={()=>setApprovalRequest(null)}
+    onApprove={approver=>{
+     const request=approvalRequest;
+     if(!request||!activeOperator)return;
+     setStoreData(old=>({...old,
+      operatorApprovals:[...old.operatorApprovals,{id:keyId(),scope:request.scope,requesterId:activeOperator.id,approverId:approver.id,description:request.description,createdAt:new Date().toISOString()}],
+      audits:[{id:keyId(),action:"Autorização demonstrativa concedida",description:request.scope+" · "+request.description,
+        createdAt:new Date().toISOString(),operatorId:activeOperator.id,approvedBy:approver.id},...old.audits]
+     }));
+     request.onApproved(approver);
+     setApprovalRequest(null);
+     notify("Autorização demonstrativa concedida por "+approver.name+".");
+    }}/>}
   {scannerMode&&<CameraBarcodeScanner key={scannerMode} title={scannerMode==="product"?"Ler código para o cadastro":"Ler código para vender"}
     onClose={()=>setScannerMode(null)} onRead={onScannerRead}
     {...(scannerMode==="sale"?{onRegister:registerBarcodeProduct}:{})}/>}
