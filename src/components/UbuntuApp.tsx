@@ -313,23 +313,47 @@ export function UbuntuApp(){
  function saveProduct(e:FormEvent<HTMLFormElement>){
   e.preventDefault();
   if(!can("editProduct")){notify("O seu perfil não pode editar produtos.","error");return;}
-  const requestedPrice=roundMoney(Number(productForm.price));
-  const requestedCost=roundMoney(Number(productForm.purchasePrice));
-  if(!can("editPrice")&&(!editingProduct||editingProduct.price!==requestedPrice||editingProduct.purchasePrice!==requestedCost)){
-   setApprovalRequest({scope:"price",description:"Confirmar "+productForm.name.trim()+" com preço de venda "+money(requestedPrice)+" e custo "+money(requestedCost)+".",onApproved:()=>commitProduct()});
+  // A autorização incide sobre valores imutáveis do pedido, não sobre um formulário
+  // que pode ser alterado enquanto o gerente introduz o seu PIN.
+  const draft={...productForm},original=editingProduct;
+  const requestedPrice=roundMoney(Number(draft.price));
+  const requestedCost=roundMoney(Number(draft.purchasePrice));
+  if(!validUnitPrice(requestedPrice)||!validUnitPrice(requestedCost)){
+   notify("Preencha preços de compra e venda válidos antes de pedir aprovação.","error");return;
+  }
+  const changed=!original||original.price!==requestedPrice||original.purchasePrice!==requestedCost;
+  if(!can("editPrice")&&changed){
+   setApprovalRequest({scope:"price",description:"Confirmar "+draft.name.trim()+" com preço de venda "+money(requestedPrice)+" e custo "+money(requestedCost)+".",onApproved:()=>commitProduct(draft,original)});
    return;
   }
-  commitProduct();
+  commitProduct(draft,original);
  }
- function commitProduct(){const name=productForm.name.trim(),sku=productForm.sku.trim().toUpperCase(),barcode=normalizeBarcode(productForm.barcode),price=Number(productForm.price),purchasePrice=Number(productForm.purchasePrice),stock=Number(productForm.stock);
-  if(!name||!sku||!productForm.category.trim()||!productForm.unit.trim()||!validUnitPrice(price)||!validUnitPrice(purchasePrice)||!(["kg","L"].includes(productForm.unit)?Number.isFinite(stock)&&Math.round(stock*1000)===stock*1000:Number.isInteger(stock))||stock<0){notify("Preencha correctamente os dados do produto.","error");return;}
+ function commitProduct(form:typeof productForm,original:Product|null){
+  const name=form.name.trim(),sku=form.sku.trim().toUpperCase(),barcode=normalizeBarcode(form.barcode);
+  const price=Number(form.price),purchasePrice=Number(form.purchasePrice),stock=Number(form.stock);
+  if(!name||!sku||!form.category.trim()||!form.unit.trim()||!validUnitPrice(price)||!validUnitPrice(purchasePrice)||
+   !(["kg","L"].includes(form.unit)?Number.isFinite(stock)&&Math.round(stock*1000)===stock*1000:Number.isInteger(stock))||stock<0){
+   notify("Preencha correctamente os dados do produto.","error");return;
+  }
   if(barcode&&!validBarcode(barcode)){notify("Introduza um código de barras válido (4 a 64 caracteres sem espaços).","error");return;}
-  const collision=barcodeCollision(data.products,sku,barcode,editingProduct?.id);
+  const collision=barcodeCollision(data.products,sku,barcode,original?.id);
   if(collision){notify("O código de barras ou SKU já está associado ao produto: "+collision.name+".","error");return;}
-  if(editingProduct&&stock<reservedQty(data,editingProduct.id)){notify("Não pode reduzir o stock abaixo das quantidades reservadas em comandas ou encomendas.","error");return;}
-  if(editingProduct&&data.pharmaLots.some(l=>l.productId===editingProduct.id)&&editingProduct.stock!==stock){notify("O stock deste produto é controlado por lotes. Faça as movimentações na área Farmácias.","error");return;}
-  const prod:Product={id:editingProduct?.id??keyId(),name,sku,...(barcode?{barcode}:{}),category:productForm.category.trim(),unit:productForm.unit.trim(),price:roundMoney(price),purchasePrice:roundMoney(purchasePrice),stock,active:true};const previousStock=editingProduct?.stock??0;const delta=stock-previousStock;
-  setData(old=>({...old,products:editingProduct?old.products.map(p=>p.id===editingProduct.id?prod:p):[prod,...old.products],stockMovements:delta!==0?[{id:keyId(),productId:prod.id,kind:editingProduct?"ajuste" as const:"entrada" as const,change:delta,createdAt:new Date().toISOString(),reference:editingProduct?"PROD-EDIT":"PROD-NEW",note:"Stock inicial ou edição do catálogo",balanceAfter:stock},...old.stockMovements]:old.stockMovements,audits:[audit(editingProduct?"Produto actualizado":"Produto criado",name),...old.audits]}));setModal(null);setEditingProduct(null);setProductPage(1);setQuery("");notify(editingProduct?"Produto actualizado.":"Produto criado.");
+  if(original&&stock<reservedQty(data,original.id)){notify("Não pode reduzir o stock abaixo das quantidades reservadas em comandas ou encomendas.","error");return;}
+  if(original&&data.pharmaLots.some(l=>l.productId===original.id)&&original.stock!==stock){
+   notify("O stock deste produto é controlado por lotes. Faça as movimentações na área Farmácias.","error");return;
+  }
+  const prod:Product={id:original?.id??keyId(),name,sku,...(barcode?{barcode}:{}),category:form.category.trim(),
+   unit:form.unit.trim(),price:roundMoney(price),purchasePrice:roundMoney(purchasePrice),stock,active:true};
+  const previousStock=original?.stock??0,delta=stock-previousStock;
+  setData(old=>({
+   ...old,products:original?old.products.map(p=>p.id===original.id?prod:p):[prod,...old.products],
+   stockMovements:delta!==0?[{id:keyId(),productId:prod.id,kind:original?"ajuste" as const:"entrada" as const,
+    change:delta,createdAt:new Date().toISOString(),reference:original?"PROD-EDIT":"PROD-NEW",
+    note:"Stock inicial ou edição do catálogo",balanceAfter:stock},...old.stockMovements]:old.stockMovements,
+   audits:[audit(original?"Produto actualizado":"Produto criado",name),...old.audits]
+  }));
+  setModal(null);setEditingProduct(null);setProductPage(1);setQuery("");
+  notify(original?"Produto actualizado.":"Produto criado.");
  }
  function openProduct(p?:Product){if(!can("editProduct")){notify("O seu perfil não pode editar produtos.","error");return;}setEditingProduct(p??null);setProductForm(p?{name:p.name,sku:p.sku,barcode:p.barcode??"",category:p.category,unit:p.unit,price:String(p.price),purchasePrice:p.purchasePrice===undefined?"":String(p.purchasePrice),stock:String(p.stock)}:{name:"",sku:"",barcode:"",category:"Mercearia",unit:"un.",purchasePrice:"",price:"",stock:""});setModal("product");}
  function disableProduct(id:string){if(!can("editPrice")){notify("A desactivação de produtos exige autorização do gerente.","error");return;}const p=data.products.find(x=>x.id===id);if(!p)return;if(reservedQty(data,id)>0){notify("Este produto está reservado para comandas ou encomendas e não pode ser desactivado.","error");return;}if(!window.confirm("Desactivar "+p.name+"?"))return;setData(old=>({...old,products:old.products.map(x=>x.id===id?{...x,active:false}:x),audits:[audit("Produto desactivado",p.name),...old.audits]}));notify("Produto desactivado.");}
