@@ -3,6 +3,7 @@ import {
  type StockMovement,type Expense,type CashSession,type CashMovement,type Sale,
  type ReturnItem,type ReturnRecord,type Payment,type SupplierPayment
 } from "./domain";
+import {reverseLoyaltyForReturn} from "./loyalty";
 
 /** Operações de DEMONSTRAÇÃO. Na produção, todas exigem transacções no servidor, RLS e idempotência. */
 type CashMethod=Exclude<Payment,"fiado">;
@@ -138,11 +139,11 @@ export function registerReturn(s:Store,saleId:string,items:{productId:string;qty
   id:keyId(),productId:i.productId,kind:"devolucao",change:i.qty,createdAt:now,reference:entry.id,note:note.trim(),
   balanceAfter:(s.products.find(p=>p.id===i.productId)?.stock??0)+i.qty
  }));
- return {...s,returns:[entry,...s.returns],products:s.products.map(p=>{const i=items.find(x=>x.productId===p.id);return i?{...p,stock:p.stock+i.qty}:p}),
+ return reverseLoyaltyForReturn({...s,returns:[entry,...s.returns],products:s.products.map(p=>{const i=items.find(x=>x.productId===p.id);return i?{...p,stock:p.stock+i.qty}:p}),
   stockMovements:[...stock,...s.stockMovements],
   customers:s.customers.map(c=>sale.method==="fiado"&&c.id===sale.customerId?{...c,debt:roundMoney(c.debt-total)}:c),
   credits:sale.method==="fiado"&&sale.customerId?[...s.credits,{id:keyId(),customerId:sale.customerId,kind:"devolucao" as const,amount:total,createdAt:now,saleId:sale.id,note:note.trim()}]:s.credits,
-  audits:[{id:keyId(),createdAt:now,action:"Devolução simulada",description:entry.id+" · "+total+" MZN"},...s.audits]};
+  audits:[{id:keyId(),createdAt:now,action:"Devolução simulada",description:entry.id+" · "+total+" MZN"},...s.audits]},saleId,total);
 }
 export function registerExpense(s:Store,description:string,category:string,amount:number,method:CashMethod,note:string):Store{
  assert(description.trim().length>=3,"Indique a descrição da despesa.");

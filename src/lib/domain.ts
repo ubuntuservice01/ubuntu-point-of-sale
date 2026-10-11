@@ -1,9 +1,9 @@
-export type Section = "dashboard" | "pos" | "products" | "customers" | "companies" | "modules" | "reports" | "finance" | "settings" | "cash" | "suppliers" | "purchases" | "inventory" | "returns" | "expenses" | "farmacia" | "restaurante" | "bar" | "talho" | "producao" | "grossistas";
+export type Section = "dashboard" | "pos" | "products" | "customers" | "companies" | "modules" | "reports" | "finance" | "settings" | "cash" | "suppliers" | "purchases" | "inventory" | "returns" | "expenses" | "farmacia" | "restaurante" | "bar" | "talho" | "producao" | "grossistas" | "catalogo" | "encomendas-online" | "entregas" | "fidelizacao";
 export type Payment = "dinheiro" | "mpesa" | "emola" | "cartao" | "fiado";
 export type Product = { id:string; name:string; sku:string; category:string; unit:string; price:number; stock:number; active:boolean };
 export type Customer = { id:string; name:string; phone:string; debt:number; creditLimit?:number|null };
 export type CartItem = { productId:string; name:string; price:number; qty:number };
-export type Sale = { id:string; createdAt:string; items:CartItem[]; total:number; method:Payment; customerId?:string; dueDate?:string; cashSessionId?:string; source?: "pos"|"farmacia"|"restaurante"|"bar"|"talho"|"grossistas"; sourceId?:string };
+export type Sale = { id:string; createdAt:string; items:CartItem[]; total:number; method:Payment; customerId?:string; dueDate?:string; cashSessionId?:string; source?: "pos"|"farmacia"|"restaurante"|"bar"|"talho"|"grossistas"|"online"; sourceId?:string; deliveryFee?:number };
 export type Company = { id:string; name:string; slug:string; sector:string; status:"activa"|"teste"|"suspensa"; modules:string[] };
 export type Audit = { id:string; createdAt:string; action:string; description:string };
 export type CreditMovement = { id:string; customerId:string; kind:"fiado"|"pagamento"|"abertura"|"devolucao"; amount:number; createdAt:string; saleId?:string; dueDate?:string; method?:Exclude<Payment,"fiado">; note?:string; cashSessionId?:string };
@@ -30,13 +30,23 @@ export type ProductionRun={id:string;recipeId:string;createdAt:string;lots:numbe
 export type WholesaleTier={id:string;productId:string;minimumQty:number;unitPrice:number;active:boolean;createdAt:string};
 export type WholesaleOrderItem={productId:string;qty:number;unitPrice:number};
 export type WholesaleOrder={id:string;customerId:string;items:WholesaleOrderItem[];total:number;state:"reservada"|"expedida"|"entregue"|"cancelada";paymentTerm:"imediato"|"fiado";method?:Exclude<Payment,"fiado">;dueDate?:string;note:string;createdAt:string;updatedAt:string;saleId?:string};
-export type Store={products:Product[];customers:Customer[];sales:Sale[];companies:Company[];audits:Audit[];credits:CreditMovement[];suppliers:Supplier[];purchases:Purchase[];supplierPayments:SupplierPayment[];stockMovements:StockMovement[];returns:ReturnRecord[];expenses:Expense[];cashSessions:CashSession[];cashMovements:CashMovement[];pharmaLots:PharmaLot[];pharmaDispenses:PharmaDispense[];serviceTables:ServiceTable[];serviceOrders:ServiceOrder[];butcherBatches:ButcherBatch[];productionRecipes:ProductionRecipe[];productionRuns:ProductionRun[];wholesaleTiers:WholesaleTier[];wholesaleOrders:WholesaleOrder[]};
+export type CatalogSettings={enabled:boolean;name:string;description:string;pickupEnabled:boolean;deliveryEnabled:boolean;deliveryFee:number;minimumOrder:number;phone:string};
+export type CatalogListing={productId:string;visible:boolean;featured:boolean};
+export type OnlineOrderStatus="recebida"|"confirmada"|"preparacao"|"pronta"|"em_entrega"|"entregue"|"levantada"|"cancelada";
+export type OnlineOrderItem={productId:string;name:string;qty:number;unitPrice:number};
+export type OnlineOrder={id:string;customerId:string;customerName:string;customerPhone:string;items:OnlineOrderItem[];subtotal:number;deliveryFee:number;total:number;fulfilment:"entrega"|"levantamento";address:string;method:Exclude<Payment,"fiado">;state:OnlineOrderStatus;note:string;createdAt:string;updatedAt:string;courierId?:string;saleId?:string};
+export type Courier={id:string;name:string;phone:string;active:boolean;createdAt:string};
+export type LoyaltySettings={enabled:boolean;meticaisPerPoint:number;rewardPoints:number;rewardName:string};
+export type LoyaltyMovement={id:string;customerId:string;kind:"ganho"|"resgate"|"estorno";points:number;createdAt:string;note:string;saleId?:string;rewardId?:string};
+export type LoyaltyReward={id:string;customerId:string;name:string;points:number;state:"por_entregar"|"entregue";createdAt:string;deliveredAt?:string};
+export type Store={products:Product[];customers:Customer[];sales:Sale[];companies:Company[];audits:Audit[];credits:CreditMovement[];suppliers:Supplier[];purchases:Purchase[];supplierPayments:SupplierPayment[];stockMovements:StockMovement[];returns:ReturnRecord[];expenses:Expense[];cashSessions:CashSession[];cashMovements:CashMovement[];pharmaLots:PharmaLot[];pharmaDispenses:PharmaDispense[];serviceTables:ServiceTable[];serviceOrders:ServiceOrder[];butcherBatches:ButcherBatch[];productionRecipes:ProductionRecipe[];productionRuns:ProductionRun[];wholesaleTiers:WholesaleTier[];wholesaleOrders:WholesaleOrder[];catalogSettings:CatalogSettings;catalogListings:CatalogListing[];onlineOrders:OnlineOrder[];couriers:Courier[];loyaltySettings:LoyaltySettings;loyaltyMovements:LoyaltyMovement[];loyaltyRewards:LoyaltyReward[]};
 export const SECTIONS: {id:Section;label:string}[] = [
   {id:"dashboard",label:"Visão geral"},{id:"pos",label:"Ponto de venda"},
   {id:"products",label:"Produtos e stock"},{id:"inventory",label:"Movimentos de stock"},{id:"customers",label:"Fiado e dívidas"},
   {id:"cash",label:"Caixa"},{id:"suppliers",label:"Fornecedores"},{id:"purchases",label:"Compras"},{id:"returns",label:"Devoluções"},{id:"expenses",label:"Despesas"},
   {id:"farmacia",label:"Farmácias"},{id:"restaurante",label:"Restaurantes"},{id:"bar",label:"Bares"},{id:"talho",label:"Talhos"},
   {id:"producao",label:"Produção e padarias"},{id:"grossistas",label:"Grossistas"},
+  {id:"catalogo",label:"Catálogo online"},{id:"encomendas-online",label:"Encomendas digitais"},{id:"entregas",label:"Entregas"},{id:"fidelizacao",label:"Fidelização"},
   {id:"modules",label:"Módulos"},
   {id:"reports",label:"Relatórios"},{id:"finance",label:"Resumo financeiro"},{id:"settings",label:"Definições"}
 ];
@@ -60,10 +70,14 @@ export function quantityReserved(s:Store,productId:string,excludedOrder?:string)
   .reduce((sum,o)=>sum+o.items.filter(i=>i.productId===productId).reduce((n,i)=>n+i.qty,0),0);
  const byWholesale=s.wholesaleOrders.filter(o=>o.state==="reservada"&&o.id!==excludedOrder)
   .reduce((sum,o)=>sum+o.items.filter(i=>i.productId===productId).reduce((n,i)=>n+i.qty,0),0);
- return Math.round((byTables+byWholesale+Number.EPSILON)*1000)/1000;
+ const byOnline=s.onlineOrders.filter(o=>!["entregue","levantada","cancelada"].includes(o.state)&&o.id!==excludedOrder)
+  .reduce((sum,o)=>sum+o.items.filter(i=>i.productId===productId).reduce((n,i)=>n+i.qty,0),0);
+ return Math.round((byTables+byWholesale+byOnline+Number.EPSILON)*1000)/1000;
 }
+export const defaultCatalogSettings=():CatalogSettings=>({enabled:true,name:"Loja Ubuntu POS 360",description:"Encontre os seus produtos e prepare uma encomenda de demonstração.",pickupEnabled:true,deliveryEnabled:true,deliveryFee:100,minimumOrder:0,phone:""});
+export const defaultLoyaltySettings=():LoyaltySettings=>({enabled:true,meticaisPerPoint:100,rewardPoints:25,rewardName:"Benefício de fidelização"});
 export const initialStore = ():Store => ({
-  products:DEMO_PRODUCTS.map(p=>({...p})),customers:[],sales:[],companies:[],audits:[],credits:[],suppliers:[],purchases:[],supplierPayments:[],stockMovements:[],returns:[],expenses:[],cashSessions:[],cashMovements:[],pharmaLots:[],pharmaDispenses:[],serviceTables:[],serviceOrders:[],butcherBatches:[],productionRecipes:[],productionRuns:[],wholesaleTiers:[],wholesaleOrders:[]
+  products:DEMO_PRODUCTS.map(p=>({...p})),customers:[],sales:[],companies:[],audits:[],credits:[],suppliers:[],purchases:[],supplierPayments:[],stockMovements:[],returns:[],expenses:[],cashSessions:[],cashMovements:[],pharmaLots:[],pharmaDispenses:[],serviceTables:[],serviceOrders:[],butcherBatches:[],productionRecipes:[],productionRuns:[],wholesaleTiers:[],wholesaleOrders:[],catalogSettings:defaultCatalogSettings(),catalogListings:[],onlineOrders:[],couriers:[],loyaltySettings:defaultLoyaltySettings(),loyaltyMovements:[],loyaltyRewards:[]
 });
 export const money=(value:number)=>new Intl.NumberFormat("pt-MZ",{minimumFractionDigits:2,maximumFractionDigits:2}).format(value)+" MZN";
 export const roundMoney=(n:number)=>Math.round((n+Number.EPSILON)*100)/100;
@@ -79,10 +93,12 @@ export function safeStore(value:unknown):Store {
     const opening=(data.customers as Customer[])
       .filter(c=>Number.isFinite(c.debt)&&c.debt>0)
       .map(c=>({id:"abertura-"+c.id,customerId:c.id,kind:"abertura" as const,amount:roundMoney(c.debt),createdAt:new Date().toISOString(),note:"Saldo anterior; histórico detalhado não disponível."}));
-    return {...(data as Store),credits:opening,suppliers:[],purchases:[],supplierPayments:[],stockMovements:[],returns:[],expenses:[],cashSessions:[],cashMovements:[],pharmaLots:[],pharmaDispenses:[],serviceTables:[],serviceOrders:[],butcherBatches:[],productionRecipes:[],productionRuns:[],wholesaleTiers:[],wholesaleOrders:[]};
+    return {...(data as Store),credits:opening,suppliers:[],purchases:[],supplierPayments:[],stockMovements:[],returns:[],expenses:[],cashSessions:[],cashMovements:[],pharmaLots:[],pharmaDispenses:[],serviceTables:[],serviceOrders:[],butcherBatches:[],productionRecipes:[],productionRuns:[],wholesaleTiers:[],wholesaleOrders:[],catalogSettings:defaultCatalogSettings(),catalogListings:[],onlineOrders:[],couriers:[],loyaltySettings:defaultLoyaltySettings(),loyaltyMovements:[],loyaltyRewards:[]};
   }
   // Compatibilidade com versões anteriores do protótipo (sem registos comerciais).
-  const collections=["suppliers","purchases","supplierPayments","stockMovements","returns","expenses","cashSessions","cashMovements","pharmaLots","pharmaDispenses","serviceTables","serviceOrders","butcherBatches","productionRecipes","productionRuns","wholesaleTiers","wholesaleOrders"] as const;
-  return {...(data as Store),...Object.fromEntries(collections.map(k=>[k,Array.isArray(data[k])?data[k]:[]]))} as Store;
+  const collections=["suppliers","purchases","supplierPayments","stockMovements","returns","expenses","cashSessions","cashMovements","pharmaLots","pharmaDispenses","serviceTables","serviceOrders","butcherBatches","productionRecipes","productionRuns","wholesaleTiers","wholesaleOrders","catalogListings","onlineOrders","couriers","loyaltyMovements","loyaltyRewards"] as const;
+  return {...(data as Store),...Object.fromEntries(collections.map(k=>[k,Array.isArray(data[k])?data[k]:[]])),
+ catalogSettings:data.catalogSettings&&typeof data.catalogSettings==="object"?{...defaultCatalogSettings(),...data.catalogSettings}:defaultCatalogSettings(),
+ loyaltySettings:data.loyaltySettings&&typeof data.loyaltySettings==="object"?{...defaultLoyaltySettings(),...data.loyaltySettings}:defaultLoyaltySettings()} as Store;
 }
 export function calcTotal(items:CartItem[]){return roundMoney(items.reduce((sum,item)=>sum+item.price*item.qty,0));}

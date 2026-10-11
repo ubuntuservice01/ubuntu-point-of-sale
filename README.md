@@ -12,6 +12,8 @@ Esta versão é um **protótipo funcional de interface**, com dados de demonstra
 - Produtos, gestão de stock e módulo demonstrativo de **fiado e dívidas** com limites de crédito, vencimentos opcionais, histórico de compras e pagamentos parciais.
 - **Operações comerciais**: abertura e fecho de caixa, movimentos de numerário, fornecedores, compras, entradas/saídas de stock, devoluções parciais, despesas e resumo financeiro.
 - **Módulos por sector**: farmácias (lotes, validade, FEFO e dispensa simulada), restaurantes/bares (mesas, comandas, preparação e fecho), talhos (transformação, quebras e venda em kg), **produção/padarias** (receitas, lotes, consumo de matérias-primas) e **grossistas** (escalões de preços, reservas, fiado e expedições).
+- **Comércio digital**: catálogo de demonstração na rota `/catalogo`, montra configurável, pesquisa, carrinho, submissão de encomendas locais, preparação, levantamento e distribuição.
+- **Fidelização**: pontos automáticos para vendas pagas com cliente identificado, estornos proporcionais por devoluções e troca de pontos por benefícios demonstrativos.
 - **Super Admin independente em `/super-admin`**, com visão geral, empresas, planos, licenças, módulos, projecções de subscrição, auditoria e definições.
 - **Administração empresarial em `/empresa`**: filiais, funcionários, perfis, permissões, dados institucionais, configurações e histórico demonstrativo.
 - Catálogo de módulos e auditoria local das acções.
@@ -31,13 +33,13 @@ bun run build
 
 ## Próximas fases
 
-1. **Continuar a expansão do frontend:** catálogo online, encomendas digitais, entregas e fidelização.
+1. **Validar e aperfeiçoar o frontend:** fluxo visual ponta a ponta, comunicação entre módulos, permissões e acessibilidade.
 2. **Validar a arquitectura dos dados e integrar o backend multitenant:** Supabase Auth, tabelas com tenant_id, autorização no servidor, RLS, Super Admin real e auditoria.
 3. **Operações reais e seguras:** vendas, pagamentos, devoluções, stock, caixa, filiais e permissões em transacções idempotentes.
 4. **Expansão:** fiado completo, catálogo, entregas, fidelização e equipamentos.
 5. **Offline seguro e IA:** IndexedDB, fila idempotente, reconciliação e assistente limitado por tenant.
 6. **Conformidade, testes de segurança e piloto.**
 
-Consulte `docs/ARQUITECTURA.md`, `docs/DESIGN-SYSTEM.md`, `docs/UX-ECRAS.md`, `docs/FRONTEND-SUPER-ADMIN.md`, `docs/FRONTEND-EMPRESA.md`, `docs/FRONTEND-COMERCIAL.md`, `docs/FRONTEND-SECTORES.md` e `docs/FRONTEND-PRODUCAO-GROSSISTAS.md`.
+Consulte `docs/ARQUITECTURA.md`, `docs/DESIGN-SYSTEM.md`, `docs/UX-ECRAS.md`, `docs/FRONTEND-SUPER-ADMIN.md`, `docs/FRONTEND-EMPRESA.md`, `docs/FRONTEND-COMERCIAL.md`, `docs/FRONTEND-SECTORES.md`, `docs/FRONTEND-PRODUCAO-GROSSISTAS.md` e `docs/FRONTEND-COMERCIO-DIGITAL.md`.
 
 **Nota fiscal:** taxas e regras de tributação devem ser parametrizadas depois de verificação legal em Moçambique. Não há taxa de IVA presumida nesta versão.
