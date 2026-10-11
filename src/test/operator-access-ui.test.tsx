@@ -43,7 +43,7 @@ describe("Gestão local de operadores e navegação",()=>{
   await loadApp();
   fireEvent.click(within(menu()).getByRole("button",{name:"Operadores e permissões"}));
   expect(screen.getByRole("heading",{name:"Operadores e permissões"})).toBeTruthy();
-  expect(screen.getByText("Gerente da demonstração")).toBeTruthy();
+  expect(screen.getAllByText("Gerente da demonstração").length).toBeGreaterThan(0);
   expect(screen.getByRole("button",{name:"Novo operador"})).toBeTruthy();
   expect(screen.getByText(/permissões nesta fase são locais/)).toBeTruthy();
  });
@@ -84,7 +84,7 @@ describe("Gestão local de operadores e navegação",()=>{
  it("gerente altera o próprio PIN: acesso seguinte rejeita PIN errado e aceita PIN correcto",async()=>{
   await loadApp();
   fireEvent.click(within(menu()).getByRole("button",{name:"Operadores e permissões"}));
-  const first=screen.getByText("Gerente da demonstração").closest("article")!;
+  const first=screen.getAllByText("Gerente da demonstração").find(el=>el.closest(".op-operator-item"))!.closest("article")!;
   fireEvent.click(within(first).getByRole("button",{name:"Editar"}));
   const dialog=screen.getByRole("dialog",{name:"Editar operador"});
   fireEvent.change(within(dialog).getByPlaceholderText("4 a 8 algarismos"),{target:{value:"6382"}});
@@ -93,7 +93,7 @@ describe("Gestão local de operadores e navegação",()=>{
   await waitFor(()=>expect(stored().operators[0]?.pinHash).toMatch(/^[0-9a-f]{64}$/));
   fireEvent.click(screen.getByRole("button",{name:"Perfil do operador"}));
   fireEvent.click(screen.getByRole("button",{name:/Sair ou trocar de operador/}));
-  const pin=screen.getByRole("textbox",{name:"PIN do operador"});
+  const pin=screen.getByLabelText("PIN do operador");
   fireEvent.change(pin,{target:{value:"0000"}});
   fireEvent.click(screen.getByRole("button",{name:"Entrar no POS"}));
   await waitFor(()=>expect(screen.getByRole("alert")).toHaveProperty("textContent",expect.stringContaining("PIN incorrecto")));
