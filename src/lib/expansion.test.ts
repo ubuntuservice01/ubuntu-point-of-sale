@@ -10,7 +10,7 @@ import {
 const ingredient=(id:string,qty:number)=>({productId:id,qty});
 const recipeInput={name:"Pão de farinha",productId:"p10",outputQty:10,ingredients:[ingredient("p3",.5),ingredient("p2",1)],notes:"Fórmula demonstrativa"};
 const withRecipe=()=>saveRecipe(initialStore(),recipeInput);
-const withCustomer=()=>({...initialStore(),customers:[{id:"c1",name:"Mercearia Modelo",phone:"840000000",debt:0,creditLimit:5000}]});
+const withCustomer=():Store=>({...initialStore(),customers:[{id:"c1",name:"Mercearia Modelo",phone:"840000000",debt:0,creditLimit:5000}]});
 const orderInput={customerId:"c1",items:[{productId:"p1",qty:5}],paymentTerm:"imediato" as const,method:"emola" as const,dueDate:"",note:"Venda por volume"};
 describe("Produção e padarias",()=>{
  it("valida receita, rendimento e ingredientes distintos",()=>{
