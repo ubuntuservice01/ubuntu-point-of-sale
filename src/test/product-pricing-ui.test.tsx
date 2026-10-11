@@ -14,7 +14,7 @@ afterEach(()=>{cleanup();window.localStorage.clear()});
 describe("Formulário de preços de produtos",()=>{
  it("pede compra e venda separadas, mostra diferença e guarda ambas",async()=>{
   render(createElement(UbuntuApp));
-  fireEvent.click(screen.getByRole("button",{name:"Produtos e stock"}));
+  fireEvent.click(screen.getByRole("navigation",{name:"Navegação principal"}).querySelector<HTMLButtonElement>('.nav-link[title="Produtos e stock"]')!);
   fireEvent.click(screen.getByRole("button",{name:"Adicionar produto"}));
   expect(screen.getByLabelText("Preço de compra (MZN)")).toBeTruthy();
   expect(screen.getByLabelText("Preço de venda (MZN)")).toBeTruthy();
@@ -37,7 +37,7 @@ describe("Formulário de preços de produtos",()=>{
  it("pede compra ainda por definir ao editar produto anterior",()=>{
   window.localStorage.setItem("ubuntu-pos360-demo-v1",JSON.stringify(initialStore()));
   render(createElement(UbuntuApp));
-  fireEvent.click(screen.getByRole("button",{name:"Produtos e stock"}));
+  fireEvent.click(screen.getByRole("navigation",{name:"Navegação principal"}).querySelector<HTMLButtonElement>('.nav-link[title="Produtos e stock"]')!);
   fireEvent.click(screen.getAllByRole("button",{name:"Editar"})[0]!);
   const cost=screen.getByLabelText("Preço de compra (MZN)") as HTMLInputElement;
   expect(cost.value).toBe("");
