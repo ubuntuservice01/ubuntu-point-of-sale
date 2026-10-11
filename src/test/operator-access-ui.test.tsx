@@ -122,8 +122,8 @@ describe("Gestão local de operadores e navegação",()=>{
   prepare([manager,supervisor],supervisor.id);
   await loadApp();
   fireEvent.click(menu().querySelector<HTMLButtonElement>('.nav-link[title="Produtos e stock"]')!);
-  const edit=screen.getAllByRole("button",{name:"Editar"})[0]!;
-  fireEvent.click(edit);
+  const productRow=screen.getByText("Arroz 5 kg").closest("tr")!;
+  fireEvent.click(within(productRow).getByRole("button",{name:"Editar"}));
   const productModal=screen.getByRole("dialog",{name:"Editar produto"});
   const price=within(productModal).getByRole("spinbutton",{name:"Preço de venda (MZN)"});
   fireEvent.change(price,{target:{value:"399"}});
