@@ -31,6 +31,10 @@ bun run dev
 bun run build
 ```
 
+## Relatórios de margens e rentabilidade (passo 2/5)
+
+Vendas, custos unitários congelados no registo da venda, devoluções, margem estimada, despesas e resultado indicativo em MZN, com exportação CSV. Quando faltam custos históricos o resultado aparece como **«Por apurar»**, sem inventar lucro. Ver [Guia do Passo 2](docs/RELATORIOS-MARGENS-2026-10-11.md).
+
 ## Leitura de código de barras pela câmara (etapa 1/5)
 
 O POS em telemóveis permite procurar códigos pela câmara quando o navegador suporta BarcodeDetector, ligar um código único a um produto e continuar manualmente quando não suporta. Uma leitura aceite emite um bip curto; no computador, o POS aceita leitores USB em modo teclado com Enter/Tab. Ver [Leitor de código de barras](docs/CODIGOS-BARRAS-CAMARA.md) para compatibilidade e testes.

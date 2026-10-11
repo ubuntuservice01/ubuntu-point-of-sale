@@ -1,5 +1,6 @@
 import {quantityReserved,keyId,roundMoney,type Store,type PharmaLot,type PharmaDispense,type ServiceArea,type ServiceTable,type ServiceOrder,type ServiceOrderItem,type ButcherBatch,type Payment,type Sale,type StockMovement} from "./domain";
 import {activeCashSession,saleStockMovements} from "./commercial";
+import {snapshotSaleItems} from "./profitability";
 
 /** Contratos funcionais exclusivamente para DEMONSTRAÇÃO LOCAL; sem controlo regulamentar, pagamentos ou permissões reais. */
 function ensure(test:unknown,message:string):asserts test {if(!test)throw new Error(message)};
@@ -42,7 +43,7 @@ export function registerPharmaDispense(s:Store,productId:string,qty:number,metho
  const allocations:{lotId:string;qty:number}[]=[];
  for(const l of lots){if(needed===0)break;const take=Math.min(needed,l.qty);if(take){allocations.push({lotId:l.id,qty:take});needed-=take}}
  const now=timestamp(),total=roundMoney(qty*p.price);
- const sale:Sale={id:"VD-F-"+keyId().slice(0,8).toUpperCase(),createdAt:now,items:[{productId:p.id,name:p.name,price:p.price,qty}],total,method,source:"farmacia",...(session?{cashSessionId:session.id}:{})};
+ const sale:Sale={id:"VD-F-"+keyId().slice(0,8).toUpperCase(),createdAt:now,items:snapshotSaleItems(s,[{productId:p.id,name:p.name,price:p.price,qty}]),total,method,source:"farmacia",...(session?{cashSessionId:session.id}:{})};
  const event:PharmaDispense={id:keyId(),createdAt:now,saleId:sale.id,productId:p.id,qty,allocations,note:note.trim()};
  return {...s,sales:[sale,...s.sales],pharmaDispenses:[event,...s.pharmaDispenses],
  pharmaLots:s.pharmaLots.map(l=>{const alloc=allocations.find(a=>a.lotId===l.id);return alloc?{...l,qty:l.qty-alloc.qty}:l}),
@@ -114,7 +115,7 @@ export function finishServiceOrder(s:Store,orderId:string,method:Exclude<Payment
  }
  const now=timestamp();
  const sale:Sale={id:"VD-"+o.area.slice(0,3).toUpperCase()+"-"+keyId().slice(0,8).toUpperCase(),
-  createdAt:now,items:o.items.map(i=>({productId:i.productId,name:s.products.find(p=>p.id===i.productId)!.name,price:i.unitPrice,qty:i.qty})),
+  createdAt:now,items:snapshotSaleItems(s,o.items.map(i=>({productId:i.productId,name:s.products.find(p=>p.id===i.productId)!.name,price:i.unitPrice,qty:i.qty}))),
   total:serviceOrderTotal(o),method,source:o.area,sourceId:o.id,...(session?{cashSessionId:session.id}:{})};
  return {...s,sales:[sale,...s.sales],products:s.products.map(p=>{const item=o.items.find(i=>i.productId===p.id);return item?{...p,stock:p.stock-item.qty}:p}),
  serviceOrders:s.serviceOrders.map(x=>x.id===o.id?{...x,state:"fechada" as const,saleId:sale.id,updatedAt:now}:x),
@@ -149,7 +150,7 @@ export function registerWeightedSale(s:Store,productId:string,qtyKg:number,metho
  const session=method==="dinheiro"?activeCashSession(s):undefined;
  ensure(method!=="dinheiro"||!!session,"Abra o caixa antes de receber dinheiro.");
  const now=timestamp(),sale:Sale={id:"VD-TAL-"+keyId().slice(0,8).toUpperCase(),createdAt:now,
- items:[{productId:p.id,name:p.name,price:p.price,qty:qtyKg}],total:roundMoney(p.price*qtyKg),method,source:"talho",...(session?{cashSessionId:session.id}:{})};
+ items:snapshotSaleItems(s,[{productId:p.id,name:p.name,price:p.price,qty:qtyKg}]),total:roundMoney(p.price*qtyKg),method,source:"talho",...(session?{cashSessionId:session.id}:{})};
  return {...s,sales:[sale,...s.sales],products:s.products.map(x=>x.id===p.id?{...x,stock:three(p.stock-qtyKg)}:x),
  stockMovements:[...saleStockMovements(s,sale).map(m=>({...m,balanceAfter:three(p.stock-qtyKg)})),...s.stockMovements],
  audits:appendAudit(s,"Venda por peso (demo)",p.name+" · "+qtyKg+" kg · "+sale.total+" MZN",now)};

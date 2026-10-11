@@ -4,6 +4,7 @@ import {
 } from "./domain";
 import {activeCashSession,saleStockMovements} from "./commercial";
 import {awardLoyaltyForSale} from "./loyalty";
+import {snapshotSaleItems} from "./profitability";
 
 function check(value:unknown,message:string):asserts value{if(!value)throw new Error(message)}
 const audit=(s:Store,action:string,description:string,time:string)=>[{id:keyId(),action,description,createdAt:time},...s.audits];
@@ -147,7 +148,7 @@ export function completeOnlineOrder(s:Store,orderId:string):Store{
  check(order.method!=="dinheiro"||session,"Abra o caixa para concluir o recebimento em dinheiro.");
  const now=new Date().toISOString();
  const sale:Sale={id:"VD-ONL-"+keyId().slice(0,8).toUpperCase(),createdAt:now,source:"online",sourceId:order.id,customerId:order.customerId,
-  items:order.items.map(i=>({productId:i.productId,name:i.name,price:i.unitPrice,qty:i.qty})),
+  items:snapshotSaleItems(s,order.items.map(i=>({productId:i.productId,name:i.name,price:i.unitPrice,qty:i.qty}))),
   total:order.total,deliveryFee:order.deliveryFee,method:order.method,...(session?{cashSessionId:session.id}:{})};
  const updated:Store={...s,sales:[sale,...s.sales],
   products:s.products.map(p=>{const line=order.items.find(i=>i.productId===p.id);return line?{...p,stock:Math.round((p.stock-line.qty+Number.EPSILON)*1000)/1000}:p}),

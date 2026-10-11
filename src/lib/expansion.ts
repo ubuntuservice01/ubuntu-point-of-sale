@@ -7,6 +7,7 @@ import {reservedQty} from "./sectors";
 import {activeCashSession,saleStockMovements} from "./commercial";
 import {canGrantCredit} from "./credit";
 import {awardLoyaltyForSale} from "./loyalty";
+import {snapshotSaleItems} from "./profitability";
 
 /** Contratos de demonstração local. Produção real requer transacções, RLS e registo de custos no servidor. */
 function requireRule(condition:unknown,message:string):asserts condition{if(!condition)throw new Error(message)}
@@ -185,7 +186,7 @@ export function dispatchWholesaleOrder(s:Store,id:string,asOf=isoToday()):Store{
  requireRule(method!=="dinheiro"||!!session,"Abra o caixa antes de receber dinheiro.");
  const now=new Date().toISOString();
  const sale:Sale={id:"VD-GRS-"+keyId().slice(0,8).toUpperCase(),createdAt:now,
-  items:order.items.map(i=>({productId:i.productId,name:s.products.find(p=>p.id===i.productId)!.name,price:i.unitPrice,qty:i.qty})),
+  items:snapshotSaleItems(s,order.items.map(i=>({productId:i.productId,name:s.products.find(p=>p.id===i.productId)!.name,price:i.unitPrice,qty:i.qty}))),
   total:order.total,method,source:"grossistas",sourceId:order.id,
   customerId:customer.id,...(order.dueDate&&method==="fiado"?{dueDate:order.dueDate}:{}),
   ...(session?{cashSessionId:session.id}:{})};

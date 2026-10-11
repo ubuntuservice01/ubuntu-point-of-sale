@@ -18,3 +18,7 @@
 /* O menu POS mantém os módulos acessíveis em ecrãs baixos. */
 .sidebar nav{overflow-y:auto;min-height:0;flex:1;padding-bottom:8px;scrollbar-width:thin;scrollbar-color:#cbd5e1 transparent}
 .sidebar .sidebar-foot{margin-top:8px;flex:none}
+
+/* Atalho dos relatórios de margens no resumo financeiro. */
+.cm-finance-actions{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}
+@media(max-width:650px){.cm-finance-actions{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.cm-finance-actions>.cm-outline{min-height:49px;white-space:normal;padding:9px}}
