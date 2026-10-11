@@ -45,7 +45,7 @@ describe("Leitor de código de barras do POS",()=>{
   fireEvent.click(within(scanner).getByRole("button",{name:/Registar produto com este código/}));
   const form=screen.getByRole("dialog",{name:"Adicionar produto"});
   expect(within(form).getByRole("textbox",{name:"Código / SKU"}).getAttribute("value")).toBe("7891234567895");
-  expect(within(form).getByRole("textbox",{name:"Código de barras (opcional)"}).toHaveProperty("value","7891234567895");
+  expect(within(form).getByRole("textbox",{name:"Código de barras (opcional)"})).toHaveProperty("value","7891234567895");
  });
  it("na edição do produto pode ler pela câmara e regressar ao formulário",async()=>{
   render(createElement(UbuntuApp));
