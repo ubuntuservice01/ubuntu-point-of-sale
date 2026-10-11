@@ -21,7 +21,7 @@ function eccDivisor(degree:number):number[]{
  for(let i=0;i<degree;i++){
   for(let j=0;j<degree;j++){
    result[j]=gfMul(result[j]!,root);
-   if(j+1<degree)result[j]^=result[j+1]!;
+   if(j+1<degree)result[j]=result[j]!^result[j+1]!;
   }
   root=gfMul(root,2);
  }
@@ -32,7 +32,7 @@ function eccRemainder(data:number[],degree:number):number[]{
  for(const byte of data){
   const factor=byte^result.shift()!;
   result.push(0);
-  for(let i=0;i<degree;i++)result[i]^=gfMul(div[i]!,factor);
+  for(let i=0;i<degree;i++)result[i]=result[i]!^gfMul(div[i]!,factor);
  }
  return result;
 }
