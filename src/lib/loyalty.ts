@@ -27,6 +27,20 @@ export function awardLoyaltyForSale(s:Store,sale:Sale,eligibleAmount=sale.total)
  return {...s,loyaltyMovements:[movement,...s.loyaltyMovements],
  audits:audit(s,"Pontos atribuídos",points+" pontos · "+sale.id,now)};
 }
+/** Pontos sobre abatimentos reais do fiado; acumula fracções entre pagamentos parciais. */
+export function awardLoyaltyForCreditPayment(s:Store,movementId:string):Store{
+ const payment=s.credits.find(e=>e.id===movementId&&e.kind==="pagamento");
+ if(!payment||!s.loyaltySettings.enabled||!s.customers.some(c=>c.id===payment.customerId))return s;
+ if(s.loyaltyMovements.some(m=>m.creditMovementId===movementId))return s;
+ const meticaisPerPoint=s.loyaltySettings.meticaisPerPoint;
+ if(!Number.isFinite(meticaisPerPoint)||meticaisPerPoint<=0)return s;
+ const totalPaid=roundMoney(s.credits.filter(e=>e.customerId===payment.customerId&&e.kind==="pagamento").reduce((n,e)=>n+e.amount,0));
+ const already=s.loyaltyMovements.filter(m=>m.customerId===payment.customerId&&m.kind==="ganho"&&m.creditMovementId).reduce((n,e)=>n+e.points,0);
+ const due=Math.max(0,Math.floor(totalPaid/meticaisPerPoint)-already);
+ if(!due)return s;
+ const time=new Date().toISOString(),entry:LoyaltyMovement={id:keyId(),customerId:payment.customerId,kind:"ganho",points:due,creditMovementId:movementId,createdAt:time,note:"Recebimento de fiado: "+movementId};
+ return {...s,loyaltyMovements:[entry,...s.loyaltyMovements],audits:audit(s,"Pontos sobre fiado recebido",due+" pontos · "+movementId,time)};
+}
 export function reverseLoyaltyForReturn(s:Store,saleId:string,returnAmount:number):Store{
  const sale=s.sales.find(x=>x.id===saleId);
  if(!sale?.customerId||returnAmount<=0)return s;

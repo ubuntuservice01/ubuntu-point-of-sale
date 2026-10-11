@@ -37,7 +37,7 @@ export type OnlineOrderItem={productId:string;name:string;qty:number;unitPrice:n
 export type OnlineOrder={id:string;customerId:string;customerName:string;customerPhone:string;items:OnlineOrderItem[];subtotal:number;deliveryFee:number;total:number;fulfilment:"entrega"|"levantamento";address:string;method:Exclude<Payment,"fiado">;state:OnlineOrderStatus;note:string;createdAt:string;updatedAt:string;courierId?:string;saleId?:string};
 export type Courier={id:string;name:string;phone:string;active:boolean;createdAt:string};
 export type LoyaltySettings={enabled:boolean;meticaisPerPoint:number;rewardPoints:number;rewardName:string};
-export type LoyaltyMovement={id:string;customerId:string;kind:"ganho"|"resgate"|"estorno";points:number;createdAt:string;note:string;saleId?:string;rewardId?:string};
+export type LoyaltyMovement={id:string;customerId:string;kind:"ganho"|"resgate"|"estorno";points:number;createdAt:string;note:string;saleId?:string;creditMovementId?:string;rewardId?:string};
 export type LoyaltyReward={id:string;customerId:string;name:string;points:number;state:"por_entregar"|"entregue";createdAt:string;deliveredAt?:string};
 export type Store={products:Product[];customers:Customer[];sales:Sale[];companies:Company[];audits:Audit[];credits:CreditMovement[];suppliers:Supplier[];purchases:Purchase[];supplierPayments:SupplierPayment[];stockMovements:StockMovement[];returns:ReturnRecord[];expenses:Expense[];cashSessions:CashSession[];cashMovements:CashMovement[];pharmaLots:PharmaLot[];pharmaDispenses:PharmaDispense[];serviceTables:ServiceTable[];serviceOrders:ServiceOrder[];butcherBatches:ButcherBatch[];productionRecipes:ProductionRecipe[];productionRuns:ProductionRun[];wholesaleTiers:WholesaleTier[];wholesaleOrders:WholesaleOrder[];catalogSettings:CatalogSettings;catalogListings:CatalogListing[];onlineOrders:OnlineOrder[];couriers:Courier[];loyaltySettings:LoyaltySettings;loyaltyMovements:LoyaltyMovement[];loyaltyRewards:LoyaltyReward[]};
 export const SECTIONS: {id:Section;label:string}[] = [
@@ -100,5 +100,12 @@ export function safeStore(value:unknown):Store {
   return {...(data as Store),...Object.fromEntries(collections.map(k=>[k,Array.isArray(data[k])?data[k]:[]])),
  catalogSettings:data.catalogSettings&&typeof data.catalogSettings==="object"?{...defaultCatalogSettings(),...data.catalogSettings}:defaultCatalogSettings(),
  loyaltySettings:data.loyaltySettings&&typeof data.loyaltySettings==="object"?{...defaultLoyaltySettings(),...data.loyaltySettings}:defaultLoyaltySettings()} as Store;
+}
+/** Permite até gramas/mililitros para kg/L; restantes produtos têm quantidade inteira. */
+export function validStockQuantity(quantity:number,unit:string,allowZero=false):boolean{
+ if(!Number.isFinite(quantity)||(allowZero?quantity<0:quantity<=0))return false;
+ return ["kg","l"].includes(unit.trim().toLowerCase())
+  ?Number.isSafeInteger(Math.round(quantity*1000))&&Math.abs(quantity*1000-Math.round(quantity*1000))<1e-7
+  :Number.isSafeInteger(quantity);
 }
 export function calcTotal(items:CartItem[]){return roundMoney(items.reduce((sum,item)=>sum+item.price*item.qty,0));}

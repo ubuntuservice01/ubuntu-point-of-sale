@@ -1,5 +1,5 @@
 import {
- keyId,roundMoney,quantityReserved,type Store,type Supplier,type Purchase,type PurchaseItem,
+ keyId,roundMoney,quantityReserved,validStockQuantity,type Store,type Supplier,type Purchase,type PurchaseItem,
  type StockMovement,type Expense,type CashSession,type CashMovement,type Sale,
  type ReturnItem,type ReturnRecord,type Payment,type SupplierPayment
 } from "./domain";
@@ -73,7 +73,7 @@ export function registerPurchase(s:Store,supplierId:string,items:PurchaseItem[],
  assert(supplier,"Seleccione um fornecedor activo.");
  assert(items.length>0,"Adicione pelo menos um produto à compra.");
  assert(items.every(i=>!s.pharmaLots.some(l=>l.productId===i.productId)),"Produtos controlados por lotes devem ser recebidos no módulo Farmácias.");
- assert(items.every(i=>isPositiveQuantity(i.qty)&&isPositiveMoney(i.unitCost)&&s.products.some(p=>p.id===i.productId&&p.active)),"Verifique produtos, quantidades e custos.");
+ assert(items.every(i=>{const p=s.products.find(p=>p.id===i.productId&&p.active);return !!p&&validStockQuantity(i.qty,p.unit)&&isPositiveMoney(i.unitCost)}),"Verifique produtos, quantidades e custos.");
  assert(new Set(items.map(i=>i.productId)).size===items.length,"Cada produto deve aparecer apenas uma vez na compra.");
  const total=roundMoney(items.reduce((sum,i)=>sum+i.qty*i.unitCost,0));
  assert(total>0,"A compra deve ter um valor positivo.");
@@ -94,19 +94,19 @@ export function registerStockAdjustment(s:Store,productId:string,kind:"entrada"|
  const p=s.products.find(x=>x.id===productId&&x.active);
  assert(p,"Seleccione um produto activo.");
  assert(!s.pharmaLots.some(l=>l.productId===productId),"O stock por lote deve ser corrigido no módulo Farmácias.");
- assert(kind==="ajuste"?(Number.isInteger(quantity)&&quantity>=0):isPositiveQuantity(quantity),"Introduza uma quantidade válida.");
+ assert(validStockQuantity(quantity,p.unit,kind==="ajuste"),"Introduza uma quantidade válida.");
  assert(note.trim().length>=3,"Indique o motivo do movimento.");
- const change=kind==="entrada"?quantity:kind==="saida"?-quantity:quantity-p.stock;
+ const change=Math.round(((kind==="entrada"?quantity:kind==="saida"?-quantity:quantity-p.stock)+Number.EPSILON)*1000)/1000;
  assert(p.stock+change>=0,"O movimento ultrapassa o stock disponível.");
  assert(p.stock+change>=quantityReserved(s,productId),"O movimento afectaria stock reservado para comandas ou encomendas.");
  assert(change!==0,"A nova quantidade é igual ao stock actual.");
- const now=new Date().toISOString(),entry:StockMovement={id:keyId(),productId,kind,change,createdAt:now,reference:"MOV-"+Date.now().toString(36).toUpperCase(),note:note.trim(),balanceAfter:p.stock+change};
- return {...s,products:s.products.map(x=>x.id===productId?{...x,stock:p.stock+change}:x),stockMovements:[entry,...s.stockMovements],audits:[{id:keyId(),createdAt:now,action:"Movimento de stock",description:p.name+" · "+(change>0?"+":"")+change+" "+p.unit},...s.audits]};
+ const now=new Date().toISOString(),entry:StockMovement={id:keyId(),productId,kind,change,createdAt:now,reference:"MOV-"+Date.now().toString(36).toUpperCase(),note:note.trim(),balanceAfter:Math.round((p.stock+change+Number.EPSILON)*1000)/1000};
+ return {...s,products:s.products.map(x=>x.id===productId?{...x,stock:entry.balanceAfter}:x),stockMovements:[entry,...s.stockMovements],audits:[{id:keyId(),createdAt:now,action:"Movimento de stock",description:p.name+" · "+(change>0?"+":"")+change+" "+p.unit},...s.audits]};
 }
 export function saleStockMovements(s:Store,sale:Sale):StockMovement[]{
  return sale.items.map(item=>{
   const p=s.products.find(x=>x.id===item.productId);
-  return {id:keyId(),productId:item.productId,kind:"venda",change:-item.qty,createdAt:sale.createdAt,reference:sale.id,note:"Saída por venda",balanceAfter:(p?.stock??0)-item.qty};
+  return {id:keyId(),productId:item.productId,kind:"venda",change:-item.qty,createdAt:sale.createdAt,reference:sale.id,note:"Saída por venda",balanceAfter:Math.round(((p?.stock??0)-item.qty+Number.EPSILON)*1000)/1000};
  });
 }
 export function returnableQuantity(s:Store,saleId:string,productId:string){

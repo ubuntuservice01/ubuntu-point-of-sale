@@ -6,6 +6,7 @@ import {
 import {reservedQty} from "./sectors";
 import {activeCashSession,saleStockMovements} from "./commercial";
 import {canGrantCredit} from "./credit";
+import {awardLoyaltyForSale} from "./loyalty";
 
 /** Contratos de demonstração local. Produção real requer transacções, RLS e registo de custos no servidor. */
 function requireRule(condition:unknown,message:string):asserts condition{if(!condition)throw new Error(message)}
@@ -189,7 +190,7 @@ export function dispatchWholesaleOrder(s:Store,id:string,asOf=isoToday()):Store{
   customerId:customer.id,...(order.dueDate&&method==="fiado"?{dueDate:order.dueDate}:{}),
   ...(session?{cashSessionId:session.id}:{})};
  const credits=method==="fiado"?[...s.credits,{id:keyId(),customerId:customer.id,kind:"fiado" as const,amount:order.total,createdAt:now,saleId:sale.id,...(order.dueDate?{dueDate:order.dueDate}:{})}]:s.credits;
- return {...s,sales:[sale,...s.sales],credits,
+ return awardLoyaltyForSale({...s,sales:[sale,...s.sales],credits,
   customers:s.customers.map(c=>c.id===customer.id&&method==="fiado"?{...c,debt:roundMoney(c.debt+order.total)}:c),
   products:s.products.map(p=>{
    const item=order.items.find(i=>i.productId===p.id);
@@ -197,7 +198,7 @@ export function dispatchWholesaleOrder(s:Store,id:string,asOf=isoToday()):Store{
   }),
   stockMovements:[...saleStockMovements(s,sale),...s.stockMovements],
   wholesaleOrders:s.wholesaleOrders.map(o=>o.id===id?{...o,state:"expedida" as const,updatedAt:now,saleId:sale.id}:o),
-  audits:audit(s,"Encomenda expedida (demo)",order.id+" · venda "+sale.id,now)};
+  audits:audit(s,"Encomenda expedida (demo)",order.id+" · venda "+sale.id,now)},sale);
 }
 export function deliverWholesaleOrder(s:Store,id:string):Store{
  const order=s.wholesaleOrders.find(o=>o.id===id);
