@@ -73,7 +73,14 @@ export function UbuntuApp(){
  const [scannerMode,setScannerMode]=useState<"sale"|"product"|null>(null);
  const {data,setData:setStoreData,loaded,overview,online,resetDemo,downloadBackup}=useOfflineStore();
  const [operatorReady,setOperatorReady]=useState(false);
- const [session,setSession]=useState<DemoSession|null>(null);
+ const [session,setSession]=useState<DemoSession|null>(()=>{
+  // O gerente demonstrativo anterior mantém os menus durante a hidratação inicial.
+  // Perfis guardados são restabelecidos após recuperar o Store.
+  let stored:string|null=null;
+  try{stored=window.sessionStorage.getItem(DEMO_SESSION_KEY)}catch{/* indisponível */}
+  return initialDemoSession([{id:BOOTSTRAP_OPERATOR_ID,name:"Gerente da demonstração",
+   role:"gerente",active:true,createdAt:"2026-01-01",updatedAt:"2026-01-01"}],stored);
+ });
  const [approvalGrant,setApprovalGrant]=useState<{section:"returns";approverId:string;expires:number}|null>(null);
  const [approvalRequest,setApprovalRequest]=useState<{scope:ApprovalScope;description:string;onApproved:(approver:Operator)=>void}|null>(null);
  const activeOperator=data.operators.find(o=>session?.operatorId===o.id&&o.active)??null;
@@ -363,8 +370,8 @@ export function UbuntuApp(){
   .filter(group=>group.items.length>0);
  const operatorSectionAllowed=allowedSection(section);
  if(loaded&&operatorReady&&!activeOperator)return <OperatorLogin operators={data.operators} onLogin={loginOperator}/>;
- return <div className={"ubuntu-shell "+(section==="pos"&&quickCashMode?"qc-mode-on":"")} aria-busy={!loaded}>
-  {!loaded&&<div className="offline-boot-overlay" role="status"><span>A recuperar os dados do POS neste dispositivo…</span></div>}
+ return <div className={"ubuntu-shell "+(section==="pos"&&quickCashMode?"qc-mode-on":"")} aria-busy={!loaded||!operatorReady}>
+  {(!loaded||!operatorReady)&&<div className="offline-boot-overlay" role="status"><span>A recuperar os dados do POS neste dispositivo…</span></div>}
   <aside className={"sidebar "+(collapsed?"is-collapsed ":"")+(mobileMenu?"mobile-open":"")}>
    <div className="brand"><span className="brand-mark"><Store size={22} strokeWidth={2.3}/></span>{!collapsed&&<span className="brand-type"><strong>Ubuntu <b>POS 360</b></strong><small>by Ubuntu Service</small></span>}<button className="mobile-close" aria-label="Fechar menu" onClick={()=>setMobileMenu(false)}><X size={20}/></button></div>
    <nav aria-label="Navegação principal">
