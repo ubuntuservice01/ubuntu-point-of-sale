@@ -21,7 +21,7 @@ export function creditPosition(customerId:string,entries:CreditMovement[],asOf:s
  const overdue=roundMoney(items.filter(x=>x.overdue).reduce((s,item)=>s+item.remaining,0));
  const nextDue=items.filter(x=>x.remaining>0&&x.entry.dueDate&&x.entry.dueDate>=asOf)
    .map(x=>x.entry.dueDate!).sort()[0];
- return {balance,overdue,items,nextDue};
+ return nextDue?{balance,overdue,items,nextDue}:{balance,overdue,items};
 }
 export function customerBalance(customerId:string,store:Store):number{
  return roundMoney(store.credits.filter(e=>e.customerId===customerId)
