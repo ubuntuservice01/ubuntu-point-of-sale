@@ -1,0 +1,22 @@
+name: Verificação Ubuntu POS 360
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obter código
+        uses: actions/checkout@v4
+      - name: Instalar Bun
+        uses: oven-sh/setup-bun@v2
+      - name: Instalar dependências
+        run: bun install --frozen-lockfile
+      - name: Verificar TypeScript
+        run: bunx tsc --noEmit
+      - name: Executar testes
+        run: bun run test
+      - name: Compilar aplicação
+        run: bun run build
