@@ -6,7 +6,7 @@ export type CartItem = { productId:string; name:string; price:number; qty:number
 export type Sale = { id:string; createdAt:string; items:CartItem[]; total:number; method:Payment; customerId?:string; dueDate?:string };
 export type Company = { id:string; name:string; slug:string; sector:string; status:"activa"|"teste"|"suspensa"; modules:string[] };
 export type Audit = { id:string; createdAt:string; action:string; description:string };
-export type CreditMovement = { id:string; customerId:string; kind:"fiado"|"pagamento"|"abertura"; amount:number; createdAt:string; saleId?:string; dueDate?:string; method?:Exclude<Payment,"fiado">; note?:string };
+export type CreditMovement = { id:string; customerId:string; kind:"fiado"|"pagamento"|"abertura"|"devolucao"; amount:number; createdAt:string; saleId?:string; dueDate?:string; method?:Exclude<Payment,"fiado">; note?:string };
 export type Store = { products:Product[]; customers:Customer[]; sales:Sale[]; companies:Company[]; audits:Audit[]; credits:CreditMovement[] };
 export const SECTIONS: {id:Section;label:string}[] = [
   {id:"dashboard",label:"Visão geral"},{id:"pos",label:"Ponto de venda"},

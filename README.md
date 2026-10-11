@@ -10,6 +10,7 @@ Esta versão é um **protótipo funcional de interface**, com dados de demonstra
 - Dashboard responsivo, com indicadores e gráficos baseados nas vendas de demonstração.
 - POS com pesquisa, categorias, carrinho, quantidades e registo de vendas **simuladas**.
 - Produtos, gestão de stock e módulo demonstrativo de **fiado e dívidas** com limites de crédito, vencimentos opcionais, histórico de compras e pagamentos parciais.
+- **Operações comerciais**: abertura e fecho de caixa, movimentos de numerário, fornecedores, compras, entradas/saídas de stock, devoluções parciais, despesas e resumo financeiro.
 - **Super Admin independente em `/super-admin`**, com visão geral, empresas, planos, licenças, módulos, projecções de subscrição, auditoria e definições.
 - **Administração empresarial em `/empresa`**: filiais, funcionários, perfis, permissões, dados institucionais, configurações e histórico demonstrativo.
 - Catálogo de módulos e auditoria local das acções.
@@ -29,13 +30,13 @@ bun run build
 
 ## Próximas fases
 
-1. **Backend multi-tenant:** Supabase Auth, tabelas com tenant_id, autorização no servidor, RLS, Super Admin real e auditoria.
-2. **Operações transaccionais:** vendas, pagamentos, devoluções, stock, caixa, filiais e permissões.
-3. **Módulos sectoriais:** farmácia, restauração, bares, talhos, produção e grossistas.
+1. **Completar o frontend sectorial:** farmácia, restauração, bares, talhos, produção e grossistas.
+2. **Validar a arquitectura dos dados e integrar o backend multitenant:** Supabase Auth, tabelas com tenant_id, autorização no servidor, RLS, Super Admin real e auditoria.
+3. **Operações reais e seguras:** vendas, pagamentos, devoluções, stock, caixa, filiais e permissões em transacções idempotentes.
 4. **Expansão:** fiado completo, catálogo, entregas, fidelização e equipamentos.
 5. **Offline seguro e IA:** IndexedDB, fila idempotente, reconciliação e assistente limitado por tenant.
 6. **Conformidade, testes de segurança e piloto.**
 
-Consulte `docs/ARQUITECTURA.md`, `docs/DESIGN-SYSTEM.md`, `docs/UX-ECRAS.md` `docs/FRONTEND-SUPER-ADMIN.md` e `docs/FRONTEND-EMPRESA.md`.
+Consulte `docs/ARQUITECTURA.md`, `docs/DESIGN-SYSTEM.md`, `docs/UX-ECRAS.md`, `docs/FRONTEND-SUPER-ADMIN.md`, `docs/FRONTEND-EMPRESA.md` e `docs/FRONTEND-COMERCIAL.md`.
 
 **Nota fiscal:** taxas e regras de tributação devem ser parametrizadas depois de verificação legal em Moçambique. Não há taxa de IVA presumida nesta versão.

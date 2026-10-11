@@ -10,7 +10,7 @@ export function creditPosition(customerId:string,entries:CreditMovement[],asOf:s
  const own=entries.filter(e=>e.customerId===customerId&&Number.isFinite(e.amount)&&e.amount>0);
  const charges=own.filter(e=>e.kind==="fiado"||e.kind==="abertura")
    .sort((a,b)=>a.createdAt.localeCompare(b.createdAt)||a.id.localeCompare(b.id));
- let paid=roundMoney(own.filter(e=>e.kind==="pagamento").reduce((s,e)=>s+e.amount,0));
+ let paid=roundMoney(own.filter(e=>e.kind==="pagamento"||e.kind==="devolucao").reduce((s,e)=>s+e.amount,0));
  const items=charges.map(entry=>{
   const covered=Math.min(entry.amount,paid);
   paid=roundMoney(paid-covered);
@@ -25,7 +25,7 @@ export function creditPosition(customerId:string,entries:CreditMovement[],asOf:s
 }
 export function customerBalance(customerId:string,store:Store):number{
  return roundMoney(store.credits.filter(e=>e.customerId===customerId)
-  .reduce((s,e)=>s+(e.kind==="pagamento"?-e.amount:e.amount),0));
+  .reduce((s,e)=>s+((e.kind==="pagamento"||e.kind==="devolucao")?-e.amount:e.amount),0));
 }
 export function canGrantCredit(customer:Customer|undefined,amount:number){
  return !!customer&&Number.isFinite(amount)&&amount>0&&
