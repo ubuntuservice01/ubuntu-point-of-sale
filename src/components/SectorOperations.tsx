@@ -28,7 +28,7 @@ function Empty({icon:Icon,title,description,action}:{icon:typeof Package;title:s
  return <div className="sc-empty"><span><Icon size={25}/></span><h3>{title}</h3><p>{description}</p>{action}</div>;
 }
 function Modal({title,children,onClose,error,wide=false}:{title:string;children:ReactNode;onClose:()=>void;error?:string|undefined;wide?:boolean}){
- const dialogRef=useDialogFocus<HTMLElement>(onClose);
+ const dialogRef=useDialogFocus<HTMLDivElement>(onClose);
  return <div className="sc-mask" onMouseDown={e=>{if(e.currentTarget===e.target)onClose()}}><div ref={dialogRef} tabIndex={-1} className={"sc-dialog "+(wide?"wide":"")} role="dialog" aria-modal="true" aria-label={title}><div className="sc-dialog-head"><h2>{title}</h2><button aria-label="Fechar" onClick={onClose}><X size={20}/></button></div><div className="sc-dialog-body">{error&&<div className="sc-error" role="alert"><AlertTriangle size={17}/>{error}</div>}{children}</div></div></div>;
 }
 function Method({value,onChange}:{value:PayMethod;onChange:(method:PayMethod)=>void}){
