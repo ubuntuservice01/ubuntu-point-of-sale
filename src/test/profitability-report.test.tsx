@@ -25,7 +25,7 @@ describe("UX do relatório de rentabilidade",()=>{
  });
  it("com custos históricos desconhecidos apresenta Por apurar, sem inventar margem",()=>{
   const s=sample();
-  const noCost={...s,sales:s.sales.map(x=>({...x,items:x.items.map(i=>({...i,costAtSale:undefined}))}))};
+  const noCost={...s,sales:s.sales.map(x=>({...x,items:x.items.map(({costAtSale:unused,...item})=>item)}))};
   render(createElement(ProfitabilityReports,{data:noCost,go:vi.fn()}));
   fireEvent.click(screen.getByRole("button",{name:"Todo o histórico"}));
   expect(screen.getByRole("region",{name:"Custos históricos em falta"})).toBeTruthy();

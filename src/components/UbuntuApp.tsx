@@ -19,6 +19,8 @@ import {CameraBarcodeScanner,type CameraBarcodeScannerProps} from "./CameraBarco
 import {barcodeCollision,findProductByScan,normalizeBarcode,validBarcode} from "../lib/barcodes";
 import {prepareScanAudio,playSuccessfulScanBeep} from "../lib/scan-feedback";
 import {useUsbScanner} from "../hooks/useUsbScanner";
+import {snapshotSaleItems} from "../lib/profitability";
+import {ProfitabilityReports} from "./ProfitabilityReports";
 import {CircleDollarSign,Truck,ShoppingBag,RefreshCw,ArrowLeftRight,BookOpen,HandCoins as HandCoinsIcon,Pill,ChefHat,GlassWater,Beef,Factory,PackageCheck,Gift,MapPin,Globe2} from "lucide-react";
 
 const ICONS={dashboard:LayoutDashboard,pos:ShoppingCart,products:Package,inventory:ArrowLeftRight,customers:Users,cash:Wallet,suppliers:Truck,purchases:ShoppingBag,returns:RefreshCw,expenses:CircleDollarSign,finance:BookOpen,farmacia:Pill,restaurante:ChefHat,bar:GlassWater,talho:Beef,producao:Factory,grossistas:PackageCheck,catalogo:Globe2,"encomendas-online":ShoppingBag,entregas:MapPin,fidelizacao:Gift,companies:Building2,modules:Boxes,reports:ChartNoAxesCombined,settings:Settings};
@@ -195,7 +197,7 @@ export function UbuntuApp(){
   if(payment==="fiado"&&creditDueDate&&creditDueDate<todayKey()){notify("A data de vencimento não pode ser anterior a hoje.","error");return;}
   if(payment==="dinheiro"&&!activeCashSession(data)){notify("Abra o caixa antes de receber uma venda em dinheiro.","error");return;}
   if(cart.some(c=>!data.products.some(p=>p.id===c.productId&&p.active&&!data.pharmaLots.some(l=>l.productId===p.id)&&p.stock-reservedQty(data,p.id)>=c.qty))){notify("O stock mudou. Reveja as quantidades.","error");return;}
-  const sale:Sale={id:"VD-"+Date.now().toString(36).toUpperCase()+"-"+keyId().slice(0,6).toUpperCase(),createdAt:new Date().toISOString(),items:cart.map(i=>({...i})),total:cartTotal,method:payment,...(customerId?{customerId,...(payment==="fiado"&&creditDueDate?{dueDate:creditDueDate}:{})}:{}),...(payment==="dinheiro"&&activeCashSession(data)?{cashSessionId:activeCashSession(data)!.id}:{})};
+  const sale:Sale={id:"VD-"+Date.now().toString(36).toUpperCase()+"-"+keyId().slice(0,6).toUpperCase(),createdAt:new Date().toISOString(),items:snapshotSaleItems(data,cart.map(i=>({...i}))),total:cartTotal,method:payment,...(customerId?{customerId,...(payment==="fiado"&&creditDueDate?{dueDate:creditDueDate}:{})}:{}),...(payment==="dinheiro"&&activeCashSession(data)?{cashSessionId:activeCashSession(data)!.id}:{})};
   setData(old=>awardLoyaltyForSale({...old,sales:[sale,...old.sales],stockMovements:[...saleStockMovements(old,sale),...old.stockMovements],products:old.products.map(p=>{const item=cart.find(i=>i.productId===p.id);return item?{...p,stock:p.stock-item.qty}:p}),customers:old.customers.map(c=>c.id===customerId&&payment==="fiado"?{...c,debt:roundMoney(c.debt+cartTotal)}:c),credits:payment==="fiado"?[...old.credits,{id:keyId(),customerId,kind:"fiado" as const,amount:cartTotal,createdAt:sale.createdAt,saleId:sale.id,...(creditDueDate?{dueDate:creditDueDate}:{})}]:old.credits,audits:[audit(payment==="fiado"?"Venda a fiado":"Venda simulada",sale.id+" · "+money(sale.total)+" · "+paymentText[payment]),...old.audits]},sale));
   setCart([]);setCustomerId("");setCreditDueDate("");setPayment("dinheiro");setReceipt(sale);setModal("receipt");notify("Venda registada na demonstração.");
  }
