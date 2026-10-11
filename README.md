@@ -31,6 +31,10 @@ bun run dev
 bun run build
 ```
 
+## Impressão térmica de comprovativos (passo 3/5)
+
+Pré-visualização e impressão pelo navegador em rolos de **58 mm e 80 mm**, com nome/logótipo da loja, artigos, totais, QR local de referência e reimpressão por histórico. Os documentos são **demonstrativos e não fiscais**; o controlo do papel/corte depende da impressora. Ver [Manual técnico e limitações](docs/IMPRESSAO-TERMICA-2026-10-11.md).
+
 ## Relatórios de margens e rentabilidade (passo 2/5)
 
 Vendas, custos unitários congelados no registo da venda, devoluções, margem estimada, despesas e resultado indicativo em MZN, com exportação CSV. Quando faltam custos históricos o resultado aparece como **«Por apurar»**, sem inventar lucro. Ver [Guia do Passo 2](docs/RELATORIOS-MARGENS-2026-10-11.md).
