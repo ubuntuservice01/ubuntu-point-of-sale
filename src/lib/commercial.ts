@@ -1,5 +1,5 @@
 import {
- keyId,roundMoney,type Store,type Supplier,type Purchase,type PurchaseItem,
+ keyId,roundMoney,quantityReserved,type Store,type Supplier,type Purchase,type PurchaseItem,
  type StockMovement,type Expense,type CashSession,type CashMovement,type Sale,
  type ReturnItem,type ReturnRecord,type Payment,type SupplierPayment
 } from "./domain";
@@ -97,6 +97,7 @@ export function registerStockAdjustment(s:Store,productId:string,kind:"entrada"|
  assert(note.trim().length>=3,"Indique o motivo do movimento.");
  const change=kind==="entrada"?quantity:kind==="saida"?-quantity:quantity-p.stock;
  assert(p.stock+change>=0,"O movimento ultrapassa o stock disponível.");
+ assert(p.stock+change>=quantityReserved(s,productId),"O movimento afectaria stock reservado para comandas ou encomendas.");
  assert(change!==0,"A nova quantidade é igual ao stock actual.");
  const now=new Date().toISOString(),entry:StockMovement={id:keyId(),productId,kind,change,createdAt:now,reference:"MOV-"+Date.now().toString(36).toUpperCase(),note:note.trim(),balanceAfter:p.stock+change};
  return {...s,products:s.products.map(x=>x.id===productId?{...x,stock:p.stock+change}:x),stockMovements:[entry,...s.stockMovements],audits:[{id:keyId(),createdAt:now,action:"Movimento de stock",description:p.name+" · "+(change>0?"+":"")+change+" "+p.unit},...s.audits]};

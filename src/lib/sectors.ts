@@ -1,4 +1,4 @@
-import {keyId,roundMoney,type Store,type PharmaLot,type PharmaDispense,type ServiceArea,type ServiceTable,type ServiceOrder,type ServiceOrderItem,type ButcherBatch,type Payment,type Sale,type StockMovement} from "./domain";
+import {quantityReserved,keyId,roundMoney,type Store,type PharmaLot,type PharmaDispense,type ServiceArea,type ServiceTable,type ServiceOrder,type ServiceOrderItem,type ButcherBatch,type Payment,type Sale,type StockMovement} from "./domain";
 import {activeCashSession,saleStockMovements} from "./commercial";
 
 /** Contratos funcionais exclusivamente para DEMONSTRAÇÃO LOCAL; sem controlo regulamentar, pagamentos ou permissões reais. */
@@ -51,9 +51,9 @@ export function registerPharmaDispense(s:Store,productId:string,qty:number,metho
  audits:appendAudit(s,"Dispensa simulada (FEFO)",p.name+" · "+qty+" un. · "+sale.id,now)};
 }
 export function reservedQty(s:Store,productId:string,excludingOrder?:string){
- return s.serviceOrders.filter(o=>o.state!=="fechada"&&o.state!=="anulada"&&o.id!==excludingOrder)
- .reduce((sum,o)=>sum+o.items.filter(i=>i.productId===productId).reduce((a,i)=>a+i.qty,0),0);
+ return quantityReserved(s,productId,excludingOrder);
 }
+
 export function registerServiceTable(s:Store,area:ServiceArea,label:string):Store{
  const name=label.trim();
  ensure(name.length>=2,"Indique o nome ou número da mesa.");
@@ -110,7 +110,7 @@ export function finishServiceOrder(s:Store,orderId:string,method:Exclude<Payment
  ensure(method!=="dinheiro"||!!session,"Abra o caixa antes de receber dinheiro.");
  for(const item of o.items){
   const p=s.products.find(p=>p.id===item.productId&&p.active);
-  ensure(p&&p.stock>=item.qty,"Stock alterado; reveja a comanda antes de fechar.");
+  ensure(p&&p.stock-quantityReserved(s,item.productId,o.id)>=item.qty,"Stock alterado ou reservado por outras encomendas; reveja a comanda.");
  }
  const now=timestamp();
  const sale:Sale={id:"VD-"+o.area.slice(0,3).toUpperCase()+"-"+keyId().slice(0,8).toUpperCase(),
@@ -124,7 +124,7 @@ export function finishServiceOrder(s:Store,orderId:string,method:Exclude<Payment
 export function registerButcherBatch(s:Store,sourceId:string,sourceQty:number,outputs:{productId:string;qty:number}[],note:string):Store{
  const source=s.products.find(p=>p.id===sourceId&&p.active&&p.unit.toLowerCase()==="kg");
  ensure(source,"Seleccione uma matéria-prima activa com unidade kg.");
- ensure(weight(sourceQty)&&sourceQty<=source.stock,"Introduza um peso válido até ao stock disponível.");
+ ensure(weight(sourceQty)&&sourceQty<=source.stock-quantityReserved(s,sourceId),"Introduza um peso válido até ao stock livre de reservas.");
  ensure(outputs.length>0,"Adicione pelo menos um corte produzido.");
  ensure(new Set(outputs.map(o=>o.productId)).size===outputs.length,"Não repita o mesmo corte.");
  ensure(outputs.every(o=>o.productId!==sourceId&&weight(o.qty)&&s.products.some(p=>p.id===o.productId&&p.active&&p.unit.toLowerCase()==="kg")),"Seleccione cortes em kg e pesos positivos.");
@@ -145,7 +145,7 @@ export function registerWeightedSale(s:Store,productId:string,qtyKg:number,metho
  const p=s.products.find(x=>x.id===productId&&x.active&&x.unit.toLowerCase()==="kg");
  ensure(p,"Seleccione um produto vendido em kg.");
  ensure(!s.pharmaLots.some(l=>l.productId===productId),"Produtos controlados por lotes devem ser dispensados na farmácia.");
- ensure(weight(qtyKg)&&p.stock>=qtyKg,"Indique um peso válido até ao stock disponível.");
+ ensure(weight(qtyKg)&&p.stock-quantityReserved(s,productId)>=qtyKg,"Indique um peso válido até ao stock livre de reservas.");
  const session=method==="dinheiro"?activeCashSession(s):undefined;
  ensure(method!=="dinheiro"||!!session,"Abra o caixa antes de receber dinheiro.");
  const now=timestamp(),sale:Sale={id:"VD-TAL-"+keyId().slice(0,8).toUpperCase(),createdAt:now,

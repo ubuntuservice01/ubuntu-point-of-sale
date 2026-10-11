@@ -1,9 +1,9 @@
-export type Section = "dashboard" | "pos" | "products" | "customers" | "companies" | "modules" | "reports" | "finance" | "settings" | "cash" | "suppliers" | "purchases" | "inventory" | "returns" | "expenses" | "farmacia" | "restaurante" | "bar" | "talho";
+export type Section = "dashboard" | "pos" | "products" | "customers" | "companies" | "modules" | "reports" | "finance" | "settings" | "cash" | "suppliers" | "purchases" | "inventory" | "returns" | "expenses" | "farmacia" | "restaurante" | "bar" | "talho" | "producao" | "grossistas";
 export type Payment = "dinheiro" | "mpesa" | "emola" | "cartao" | "fiado";
 export type Product = { id:string; name:string; sku:string; category:string; unit:string; price:number; stock:number; active:boolean };
 export type Customer = { id:string; name:string; phone:string; debt:number; creditLimit?:number|null };
 export type CartItem = { productId:string; name:string; price:number; qty:number };
-export type Sale = { id:string; createdAt:string; items:CartItem[]; total:number; method:Payment; customerId?:string; dueDate?:string; cashSessionId?:string; source?: "pos"|"farmacia"|"restaurante"|"bar"|"talho"; sourceId?:string };
+export type Sale = { id:string; createdAt:string; items:CartItem[]; total:number; method:Payment; customerId?:string; dueDate?:string; cashSessionId?:string; source?: "pos"|"farmacia"|"restaurante"|"bar"|"talho"|"grossistas"; sourceId?:string };
 export type Company = { id:string; name:string; slug:string; sector:string; status:"activa"|"teste"|"suspensa"; modules:string[] };
 export type Audit = { id:string; createdAt:string; action:string; description:string };
 export type CreditMovement = { id:string; customerId:string; kind:"fiado"|"pagamento"|"abertura"|"devolucao"; amount:number; createdAt:string; saleId?:string; dueDate?:string; method?:Exclude<Payment,"fiado">; note?:string; cashSessionId?:string };
@@ -11,7 +11,7 @@ export type Supplier={id:string;name:string;phone:string;email:string;city:strin
 export type PurchaseItem={productId:string;qty:number;unitCost:number};
 export type Purchase={id:string;supplierId:string;items:PurchaseItem[];total:number;createdAt:string;paymentStatus:"paga"|"por_pagar";paymentMethod?:Exclude<Payment,"fiado">;cashSessionId?:string;reference:string};
 export type SupplierPayment={id:string;supplierId:string;amount:number;method:Exclude<Payment,"fiado">;createdAt:string;cashSessionId?:string;note:string};
-export type StockMovement={id:string;productId:string;kind:"compra"|"entrada"|"saida"|"ajuste"|"venda"|"devolucao";change:number;createdAt:string;reference:string;note:string;balanceAfter:number};
+export type StockMovement={id:string;productId:string;kind:"compra"|"entrada"|"saida"|"ajuste"|"venda"|"devolucao"|"consumo"|"producao";change:number;createdAt:string;reference:string;note:string;balanceAfter:number};
 export type ReturnItem={productId:string;qty:number;unitPrice:number};
 export type ReturnRecord={id:string;saleId:string;items:ReturnItem[];total:number;createdAt:string;method:Payment|"abater_fiado";cashSessionId?:string;note:string};
 export type Expense={id:string;description:string;category:string;amount:number;method:Exclude<Payment,"fiado">;createdAt:string;cashSessionId?:string;note:string};
@@ -24,12 +24,19 @@ export type ServiceTable={id:string;area:ServiceArea;label:string;active:boolean
 export type ServiceOrderItem={productId:string;qty:number;unitPrice:number};
 export type ServiceOrder={id:string;area:ServiceArea;tableId:string;items:ServiceOrderItem[];state:"aberta"|"preparacao"|"pronta"|"servida"|"fechada"|"anulada";createdAt:string;updatedAt:string;saleId?:string;note:string};
 export type ButcherBatch={id:string;createdAt:string;sourceProductId:string;sourceQty:number;outputs:{productId:string;qty:number}[];wasteQty:number;note:string};
-export type Store={products:Product[];customers:Customer[];sales:Sale[];companies:Company[];audits:Audit[];credits:CreditMovement[];suppliers:Supplier[];purchases:Purchase[];supplierPayments:SupplierPayment[];stockMovements:StockMovement[];returns:ReturnRecord[];expenses:Expense[];cashSessions:CashSession[];cashMovements:CashMovement[];pharmaLots:PharmaLot[];pharmaDispenses:PharmaDispense[];serviceTables:ServiceTable[];serviceOrders:ServiceOrder[];butcherBatches:ButcherBatch[]};
+export type RecipeIngredient={productId:string;qty:number};
+export type ProductionRecipe={id:string;name:string;productId:string;outputQty:number;ingredients:RecipeIngredient[];active:boolean;notes:string;createdAt:string};
+export type ProductionRun={id:string;recipeId:string;createdAt:string;lots:number;outputProductId:string;outputQty:number;ingredients:RecipeIngredient[];note:string;estimatedCost?:number};
+export type WholesaleTier={id:string;productId:string;minimumQty:number;unitPrice:number;active:boolean;createdAt:string};
+export type WholesaleOrderItem={productId:string;qty:number;unitPrice:number};
+export type WholesaleOrder={id:string;customerId:string;items:WholesaleOrderItem[];total:number;state:"reservada"|"expedida"|"entregue"|"cancelada";paymentTerm:"imediato"|"fiado";method?:Exclude<Payment,"fiado">;dueDate?:string;note:string;createdAt:string;updatedAt:string;saleId?:string};
+export type Store={products:Product[];customers:Customer[];sales:Sale[];companies:Company[];audits:Audit[];credits:CreditMovement[];suppliers:Supplier[];purchases:Purchase[];supplierPayments:SupplierPayment[];stockMovements:StockMovement[];returns:ReturnRecord[];expenses:Expense[];cashSessions:CashSession[];cashMovements:CashMovement[];pharmaLots:PharmaLot[];pharmaDispenses:PharmaDispense[];serviceTables:ServiceTable[];serviceOrders:ServiceOrder[];butcherBatches:ButcherBatch[];productionRecipes:ProductionRecipe[];productionRuns:ProductionRun[];wholesaleTiers:WholesaleTier[];wholesaleOrders:WholesaleOrder[]};
 export const SECTIONS: {id:Section;label:string}[] = [
   {id:"dashboard",label:"Visão geral"},{id:"pos",label:"Ponto de venda"},
   {id:"products",label:"Produtos e stock"},{id:"inventory",label:"Movimentos de stock"},{id:"customers",label:"Fiado e dívidas"},
   {id:"cash",label:"Caixa"},{id:"suppliers",label:"Fornecedores"},{id:"purchases",label:"Compras"},{id:"returns",label:"Devoluções"},{id:"expenses",label:"Despesas"},
   {id:"farmacia",label:"Farmácias"},{id:"restaurante",label:"Restaurantes"},{id:"bar",label:"Bares"},{id:"talho",label:"Talhos"},
+  {id:"producao",label:"Produção e padarias"},{id:"grossistas",label:"Grossistas"},
   {id:"modules",label:"Módulos"},
   {id:"reports",label:"Relatórios"},{id:"finance",label:"Resumo financeiro"},{id:"settings",label:"Definições"}
 ];
@@ -47,8 +54,16 @@ export const DEMO_PRODUCTS:Product[] = [
   {id:"p9",name:"Leite em pó 400 g",sku:"ALI-005",category:"Mercearia",unit:"lata",price:345,stock:6,active:true},
   {id:"p10",name:"Bolacha sortida",sku:"ALI-006",category:"Mercearia",unit:"un.",price:45,stock:41,active:true}
 ];
+/** Quantidade comprometida por comandas e encomendas grossistas ainda não expedidas. */
+export function quantityReserved(s:Store,productId:string,excludedOrder?:string):number{
+ const byTables=s.serviceOrders.filter(o=>!["fechada","anulada"].includes(o.state)&&o.id!==excludedOrder)
+  .reduce((sum,o)=>sum+o.items.filter(i=>i.productId===productId).reduce((n,i)=>n+i.qty,0),0);
+ const byWholesale=s.wholesaleOrders.filter(o=>o.state==="reservada"&&o.id!==excludedOrder)
+  .reduce((sum,o)=>sum+o.items.filter(i=>i.productId===productId).reduce((n,i)=>n+i.qty,0),0);
+ return Math.round((byTables+byWholesale+Number.EPSILON)*1000)/1000;
+}
 export const initialStore = ():Store => ({
-  products:DEMO_PRODUCTS.map(p=>({...p})),customers:[],sales:[],companies:[],audits:[],credits:[],suppliers:[],purchases:[],supplierPayments:[],stockMovements:[],returns:[],expenses:[],cashSessions:[],cashMovements:[],pharmaLots:[],pharmaDispenses:[],serviceTables:[],serviceOrders:[],butcherBatches:[]
+  products:DEMO_PRODUCTS.map(p=>({...p})),customers:[],sales:[],companies:[],audits:[],credits:[],suppliers:[],purchases:[],supplierPayments:[],stockMovements:[],returns:[],expenses:[],cashSessions:[],cashMovements:[],pharmaLots:[],pharmaDispenses:[],serviceTables:[],serviceOrders:[],butcherBatches:[],productionRecipes:[],productionRuns:[],wholesaleTiers:[],wholesaleOrders:[]
 });
 export const money=(value:number)=>new Intl.NumberFormat("pt-MZ",{minimumFractionDigits:2,maximumFractionDigits:2}).format(value)+" MZN";
 export const roundMoney=(n:number)=>Math.round((n+Number.EPSILON)*100)/100;
@@ -64,10 +79,10 @@ export function safeStore(value:unknown):Store {
     const opening=(data.customers as Customer[])
       .filter(c=>Number.isFinite(c.debt)&&c.debt>0)
       .map(c=>({id:"abertura-"+c.id,customerId:c.id,kind:"abertura" as const,amount:roundMoney(c.debt),createdAt:new Date().toISOString(),note:"Saldo anterior; histórico detalhado não disponível."}));
-    return {...(data as Store),credits:opening,suppliers:[],purchases:[],supplierPayments:[],stockMovements:[],returns:[],expenses:[],cashSessions:[],cashMovements:[],pharmaLots:[],pharmaDispenses:[],serviceTables:[],serviceOrders:[],butcherBatches:[]};
+    return {...(data as Store),credits:opening,suppliers:[],purchases:[],supplierPayments:[],stockMovements:[],returns:[],expenses:[],cashSessions:[],cashMovements:[],pharmaLots:[],pharmaDispenses:[],serviceTables:[],serviceOrders:[],butcherBatches:[],productionRecipes:[],productionRuns:[],wholesaleTiers:[],wholesaleOrders:[]};
   }
   // Compatibilidade com versões anteriores do protótipo (sem registos comerciais).
-  const collections=["suppliers","purchases","supplierPayments","stockMovements","returns","expenses","cashSessions","cashMovements","pharmaLots","pharmaDispenses","serviceTables","serviceOrders","butcherBatches"] as const;
+  const collections=["suppliers","purchases","supplierPayments","stockMovements","returns","expenses","cashSessions","cashMovements","pharmaLots","pharmaDispenses","serviceTables","serviceOrders","butcherBatches","productionRecipes","productionRuns","wholesaleTiers","wholesaleOrders"] as const;
   return {...(data as Store),...Object.fromEntries(collections.map(k=>[k,Array.isArray(data[k])?data[k]:[]]))} as Store;
 }
 export function calcTotal(items:CartItem[]){return roundMoney(items.reduce((sum,item)=>sum+item.price*item.qty,0));}
