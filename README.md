@@ -31,6 +31,10 @@ bun run dev
 bun run build
 ```
 
+## Modo Caixa Rápido — operador de balcão
+
+O **Ponto de venda** inclui agora um comutador **Modo Caixa Rápido / Modo normal**, com cartões grandes, carrinho sempre acessível, teclado numérico de quantidades e dinheiro recebido, cálculo de troco, métodos de pagamento e atalhos F2/F4/F8. Utiliza o mesmo fluxo de venda e as mesmas validações de stock/fiado do POS normal. **É uma interface visual de demonstração, não uma permissão RBAC de produção.** Consultar [Manual de Caixa Rápido](docs/MODO-CAIXA-RAPIDO-2026-10-11.md).
+
 ## Passo 5/5 — Modo offline e preparação da sincronização
 
 O POS passa a usar **IndexedDB** como armazenamento principal (quando suportado), com uma fila local de mudanças pendentes, identificação de operações, cache da página principal e recursos estáticos por Service Worker, aviso online/offline e exportação manual JSON. **Não comunica nem sincroniza com Supabase nesta etapa**; a fila só pode ser enviada após implementar API autenticada, idempotente e multiempresa. Consultar [Manual do Modo Offline](docs/MODO-OFFLINE-2026-10-11.md).

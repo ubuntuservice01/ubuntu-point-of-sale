@@ -1,6 +1,6 @@
 import {useEffect,useMemo,useRef,useState,type FormEvent,type ReactNode} from "react";
 import {Link} from "@tanstack/react-router";
-import {LayoutDashboard,ShoppingCart,Package,Users,Building2,Boxes,ChartNoAxesCombined,Settings,Menu,Search,Plus,ArrowUpRight,Wallet,AlertTriangle,CheckCircle2,ChevronRight,ChevronDown,Bell,Receipt,Trash2,Minus,Store,HandCoins,Usb,ShieldCheck,Warehouse,CalendarDays,Activity,Banknote,CreditCard,Smartphone,Info,Send,Check,X,SlidersHorizontal,Printer,ScanBarcode} from "lucide-react";
+import {LayoutDashboard,ShoppingCart,Package,Users,Building2,Boxes,ChartNoAxesCombined,Settings,Menu,Search,Plus,ArrowUpRight,Wallet,AlertTriangle,CheckCircle2,ChevronRight,ChevronDown,Bell,Receipt,Trash2,Minus,Store,HandCoins,Keyboard,Usb,ShieldCheck,Warehouse,CalendarDays,Activity,Banknote,CreditCard,Smartphone,Info,Send,Check,X,SlidersHorizontal,Printer,ScanBarcode} from "lucide-react";
 import {money,roundMoney,calcTotal,keyId,slugify,SECTIONS,MODULES,SECTORS,type Section,type Product,type CartItem,type Store as StoreData,type Customer,type Company,type Payment,type Sale} from "../lib/domain";
 import {canGrantCredit,creditPosition} from "../lib/credit";
 import {activeCashSession,saleStockMovements} from "../lib/commercial";
@@ -21,6 +21,7 @@ import {prepareScanAudio,playSuccessfulScanBeep} from "../lib/scan-feedback";
 import {useUsbScanner} from "../hooks/useUsbScanner";
 import {snapshotSaleItems} from "../lib/profitability";
 import {ProfitabilityReports} from "./ProfitabilityReports";
+import {QuickCash} from "./QuickCash";
 import {useOfflineStore} from "../hooks/useOfflineStore";
 import {OfflineHeaderStatus,OfflineSettingsPanel} from "./OfflineStatus";
 import {AlertCenter,AlertBellPopover} from "./AlertCenter";
@@ -63,8 +64,11 @@ export function UbuntuApp(){
  useEffect(()=>{if(typeof window.matchMedia!=="function")return;const mq=window.matchMedia("(max-width:960px)");const check=()=>setCompactLayout(mq.matches);check();mq.addEventListener?.("change",check);return()=>mq.removeEventListener?.("change",check)},[]);
  const [mobileMenu,setMobileMenu]=useState(false);
  const [mobilePosView,setMobilePosView]=useState<"products"|"cart">("products");
+ const [quickCashMode,setQuickCashMode]=useState(false);
  const [scannerMode,setScannerMode]=useState<"sale"|"product"|null>(null);
  const {data,setData,loaded,overview,online,resetDemo,downloadBackup}=useOfflineStore();
+ useEffect(()=>{try{setQuickCashMode(window.localStorage.getItem("ubuntu-pos360-quick-mode")==="on")}catch{/* preferências indisponíveis */}},[]);
+ useEffect(()=>{if(!loaded)return;try{window.localStorage.setItem("ubuntu-pos360-quick-mode",quickCashMode?"on":"off")}catch{/* continuar sem preferências */}},[loaded,quickCashMode]);
  const [notice,setNotice]=useState<Notice|null>(null);
  const [modal,setModal]=useState<"product"|"customer"|"company"|"payment"|"receipt"|"credit-details"|null>(null);
  const [detailCustomerId,setDetailCustomerId]=useState<string|null>(null);
@@ -195,6 +199,20 @@ export function UbuntuApp(){
   const product=data.products.find(p=>p.id===id);
   setCart(items=>items.map(i=>i.productId===id?{...i,qty:Math.max(0,Math.min(Math.max(0,(product?.stock??0)-reservedQty(data,id)),i.qty+delta))}:i).filter(i=>i.qty>0));
  }
+ function setQuickQty(id:string,quantity:number){
+  const product=data.products.find(p=>p.id===id);
+  if(!product||!Number.isFinite(quantity)||quantity<=0)return;
+  if(!(["kg","L"].includes(product.unit)?Math.round(quantity*1000)===quantity*1000:Number.isInteger(quantity))){
+   notify("Quantidade inválida para a unidade deste produto.","error");return;
+  }
+  if(quantity>product.stock-reservedQty(data,id)){notify("A quantidade ultrapassa o stock livre.","error");return;}
+  const next=cartRef.current.map(item=>item.productId===id?{...item,qty:quantity}:item);
+  cartRef.current=next;setCart(next);
+ }
+ function clearQuickCart(){
+  if(!cart.length)return;
+  if(window.confirm("Limpar todos os artigos desta venda?")){cartRef.current=[];setCart([]);notify("Venda actual limpa.")}
+ }
  function checkout(){
   if(!cart.length){notify("Adicione produtos à venda.","error");return;}
   if(payment==="fiado"&&!customerId){notify("Seleccione o cliente para registar o fiado.","error");return;}
@@ -251,7 +269,7 @@ export function UbuntuApp(){
  };
  const sidebarAlerts=alertCounts.unread;
  const menuSections=NAV_GROUPS.map(group=>({...group,items:group.sections.map(id=>({id,label:sectionLabel(id),Icon:ICONS[id]}))}));
- return <div className="ubuntu-shell" aria-busy={!loaded}>
+ return <div className={"ubuntu-shell "+(section==="pos"&&quickCashMode?"qc-mode-on":"")} aria-busy={!loaded}>
   {!loaded&&<div className="offline-boot-overlay" role="status"><span>A recuperar os dados do POS neste dispositivo…</span></div>}
   <aside className={"sidebar "+(collapsed?"is-collapsed ":"")+(mobileMenu?"mobile-open":"")}>
    <div className="brand"><span className="brand-mark"><Store size={22} strokeWidth={2.3}/></span>{!collapsed&&<span className="brand-type"><strong>Ubuntu <b>POS 360</b></strong><small>by Ubuntu Service</small></span>}<button className="mobile-close" aria-label="Fechar menu" onClick={()=>setMobileMenu(false)}><X size={20}/></button></div>
@@ -293,7 +311,26 @@ export function UbuntuApp(){
     onOpen={openAlert} onRead={markAsRead} onUnread={markAsUnread} onReadAll={markAllAsRead}
     onSaveSettings={settings=>setData(old=>({...old,alertSettings:settings,readAlertIds:[]}))}/>}
    {section==="dashboard"&&<DashboardOverview data={data} go={navigate} addProduct={()=>{navigate("products");openProduct()}} addCustomer={()=>{navigate("customers");setModal("customer")}} openOverdue={()=>{navigate("customers");setDebtFilter("vencidas")}}/>}
-   {section==="pos"&&<><PageHeading title="Ponto de venda" subtitle="Escolha os produtos e registe uma venda de demonstração." kicker="VENDAS" right={<button className="status-chip" onClick={()=>navigate("cash")}><span/>{activeCashSession(data)?"Caixa aberto":"Abrir caixa"} <ChevronRight size={14}/></button>}/><div id="mobile-pos-tabbar" className="mobile-pos-switch" role="group" aria-label="Etapas da venda">
+   {section==="pos"&&<><PageHeading title={quickCashMode?"Caixa rápido":"Ponto de venda"} subtitle={quickCashMode?"Interface de balcão com teclas grandes e poucos passos.":"Escolha os produtos e registe uma venda de demonstração."} kicker="VENDAS"
+ right={<div className="qc-mode-controls">
+  <button type="button" className={"qc-toggle "+(quickCashMode?"is-on":"")} aria-pressed={quickCashMode}
+   onClick={()=>{setQuickCashMode(x=>!x);setMobilePosView("products")}}><Keyboard size={19}/>{quickCashMode?"Modo normal":"Modo Caixa Rápido"}</button>
+  <button className="status-chip" onClick={()=>navigate("cash")}><span/>{activeCashSession(data)?"Caixa aberto":"Abrir caixa"} <ChevronRight size={14}/></button>
+ </div>}/>{quickCashMode?<QuickCash
+  products={data.products} cart={cart} payment={payment} customers={data.customers} customerId={customerId}
+  creditDueDate={creditDueDate} total={cartTotal} cashOpen={Boolean(activeCashSession(data))}
+  disabled={Boolean(modal||scannerMode)||!loaded||Boolean(overview.error&&overview.error.includes("Outra aba"))}
+  reserved={id=>reservedQty(data,id)} controlledByLot={id=>data.pharmaLots.some(l=>l.productId===id)}
+  onAdd={addToCart}
+  onScan={code=>{const result=tryScannedSale(code);if(result.kind==="unavailable")notify(result.message,"error");return result.kind==="added"}}
+  onCamera={()=>{prepareScanAudio();setScannerMode("sale")}}
+  onQtyDelta={updateQty} onQtyExact={setQuickQty}
+  onRemove={id=>{setCart(items=>items.filter(x=>x.productId!==id))}}
+  onClear={clearQuickCart}
+  onPayment={setPayment} onCustomer={setCustomerId} onDueDate={setCreditDueDate} onCheckout={checkout}
+  onOpenCash={()=>navigate("cash")}
+  onNewCustomer={()=>{setCustomerForm({name:"",phone:"",creditLimit:""});setModal("customer")}}
+ />:<><div id="mobile-pos-tabbar" className="mobile-pos-switch" role="group" aria-label="Etapas da venda">
  <button type="button" aria-pressed={mobilePosView==="products"} className={mobilePosView==="products"?"active":""} onClick={()=>setMobilePosView("products")}><Package size={18}/> Produtos</button>
  <button type="button" aria-pressed={mobilePosView==="cart"} className={mobilePosView==="cart"?"active":""} onClick={()=>setMobilePosView("cart")}><ShoppingCart size={18}/> Carrinho {cartCount>0&&<span className="mobile-tab-count">{cartCount}</span>}</button>
  </div><div className={"pos-layout mobile-pos-layout "+(mobilePosView==="cart"?"mobile-pos-show-cart":"mobile-pos-show-products")}><section className="pos-catalog"><div className="pos-search"><Search size={20}/><input ref={posSearchRef} aria-label="Pesquisar produto" placeholder="Pesquisar nome ou ler código de barras…" value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();scanSku()}}}/>{query&&<IconButton label="Limpar pesquisa" onClick={()=>setQuery("")}><X size={17}/></IconButton>}</div><div className="mobile-scan-launch"><button type="button" className="mobile-camera-button" onClick={()=>{prepareScanAudio();setScannerMode("sale")}} aria-label="Ler código de barras com a câmara"><ScanBarcode size={20}/> Ler código com a câmara</button></div><div className="ux-pos-search-hint"><span>Atalho <kbd>/</kbd> para pesquisar</span><span><kbd>Enter</kbd> adiciona SKU ou código de barras</span></div>
@@ -307,7 +344,7 @@ export function UbuntuApp(){
   {data.customers.length===0&&<button className="text-link inline-help" onClick={()=>setModal("customer")}>Registar cliente <Plus size={14}/></button>}
   {payment==="fiado"&&customerId&&!canGrantCredit(data.customers.find(c=>c.id===customerId),cartTotal)&&<p className="validation-warning">O fiado ultrapassa o limite de crédito definido para este cliente.</p>}
  </div>
- <button className="primary-btn checkout-btn" onClick={checkout} disabled={!cart.length||(payment==="fiado"&&(!customerId||!canGrantCredit(data.customers.find(c=>c.id===customerId),cartTotal)))}><CheckCircle2 size={19}/> Registar venda · {money(cartTotal)}</button><p className="safe-note"><Info size={15}/> Registo local para testes. Não efectua cobranças reais.</p></div></aside></div></>}
+ <button className="primary-btn checkout-btn" onClick={checkout} disabled={!cart.length||(payment==="fiado"&&(!customerId||!canGrantCredit(data.customers.find(c=>c.id===customerId),cartTotal)))}><CheckCircle2 size={19}/> Registar venda · {money(cartTotal)}</button><p className="safe-note"><Info size={15}/> Registo local para testes. Não efectua cobranças reais.</p></div></aside></div></>}</>}
    {section==="products"&&<><PageHeading title="Produtos e stock" kicker="INVENTÁRIO" subtitle="Registe o preço de compra, o preço de venda e o stock de cada produto." right={<button className="primary-btn" onClick={()=>openProduct()}><Plus size={18}/> Adicionar produto</button>}/><section className="surface table-panel"><div className="table-tools"><div className="input-search"><Search size={18}/><input placeholder="Pesquisar produtos…" aria-label="Pesquisar produtos" value={query} onChange={e=>{setQuery(e.target.value);setProductPage(1)}}/></div><div className="ux-product-table-options"><label>Ordenar<select aria-label="Ordenar produtos" value={productSort} onChange={e=>{setProductSort(e.target.value as "nome"|"preco"|"stock");setProductPage(1)}}><option value="nome">Nome</option><option value="preco">Maior preço</option><option value="stock">Menor stock</option></select></label><div className="table-counter">{displayedProducts.length} de {effectiveProducts.length} produtos</div></div></div><div className="table-scroll"><table className="data-table"><thead><tr><th>Produto</th><th>Código</th><th>Categoria</th><th>Preço de compra</th><th>Preço de venda</th><th>Diferença bruta/un.</th><th>Stock</th><th className="right">Acções</th></tr></thead><tbody>{productsOnPage.map(p=><tr key={p.id}><td><span className="table-product-icon"><Package size={18}/></span><b>{p.name}</b></td><td>{p.sku}{p.barcode&&<small className="product-barcode-display">Barras: {p.barcode}</small>}</td><td>{p.category}</td><td className="num-text">{p.purchasePrice===undefined?"Por definir":money(p.purchasePrice)}</td><td className="num-text">{money(p.price)}</td><td className="num-text">{grossUnitDifference(p)===null?"—":<span className={grossUnitDifference(p)!<0?"product-pricing-negative":"product-pricing-positive"}>{money(grossUnitDifference(p)!)}</span>}</td><td><span className={"table-state "+(p.stock<=10?"warning":"good")}>{p.stock} {p.unit}</span></td><td className="right"><button className="small-btn" onClick={()=>openProduct(p)}>Editar</button><IconButton label={"Desactivar "+p.name} onClick={()=>disableProduct(p.id)}><Trash2 size={16}/></IconButton></td></tr>)}</tbody></table></div>{displayedProducts.length>10&&<div className="ux-pagination"><span>Página {Math.min(productPage,productPages)} de {productPages}</span><button className="outline-btn" disabled={productPage<=1} onClick={()=>setProductPage(p=>Math.max(1,p-1))}>Anterior</button><button className="outline-btn" disabled={productPage>=productPages} onClick={()=>setProductPage(p=>Math.min(productPages,p+1))}>Seguinte</button></div>}{displayedProducts.length===0&&<Empty icon={Package} title="Sem produtos" description="Adicione o primeiro produto ou altere a pesquisa."/>}</section></>}
    {section==="customers"&&<>
     <PageHeading title="Fiado e dívidas" kicker="CLIENTES" subtitle="Saiba quem deve, quando deve pagar e o que já foi recebido." right={<button className="primary-btn" onClick={()=>setModal("customer")}><Plus size={18}/> Novo cliente</button>}/>
@@ -338,7 +375,7 @@ export function UbuntuApp(){
    {(["cash","suppliers","purchases","inventory","returns","expenses","finance"] as const).includes(section as "cash")&&<CommercialOperations section={section as "cash"|"suppliers"|"purchases"|"inventory"|"returns"|"expenses"|"finance"} data={data} onChange={setData} notify={notify} go={navigate}/>}
    {section==="settings"&&<><PageHeading title="Definições" kicker="CONFIGURAÇÃO" subtitle="Consulte o idioma, a moeda e as informações desta demonstração."/><section className="surface settings-panel"><div className="settings-heading"><div className="settings-icon"><SlidersHorizontal size={24}/></div><div><h2>Ambiente de demonstração</h2><p>Os dados são guardados apenas neste navegador e não são partilhados com outras empresas.</p></div></div><div className="setting-line"><div><b>Moeda principal</b><span>Metical moçambicano</span></div><strong>MZN</strong></div><div className="setting-line"><div><b>Idioma</b><span>Português de Moçambique</span></div><strong>pt-MZ</strong></div><div className="setting-line"><div><b>Ambiente</b><span>Sem ligação ao Supabase ou pagamentos externos</span></div><span className="table-state warning">Demonstração</span></div><OfflineSettingsPanel online={online} loaded={loaded} overview={overview} downloadBackup={downloadBackup}/><ThermalReceiptSettingsPanel value={data.receiptSettings} onSave={settings=>{setData(old=>({...old,receiptSettings:settings}));notify("Configuração dos comprovativos guardada neste navegador.")}}/><div className="danger-zone"><h3>Limpar dados da demonstração</h3><p>Repõe os produtos de exemplo e apaga clientes, empresas e vendas simuladas guardados neste navegador.</p><button className="danger-btn" onClick={()=>{if(window.confirm("Tem a certeza de que pretende apagar os dados desta demonstração?")){resetDemo();setCart([]);notify("Reposição da demonstração solicitada. Aguarde a confirmação da gravação local.");}}}><Trash2 size={16}/> Repor demonstração</button></div></section></>}
    <footer className="app-footer">Uma plataforma desenvolvida pela <b>Ubuntu Service, Lda.</b> <span>·</span> Criando pontes entre o físico e o digital.</footer>
-  </main><MobileQuickNav section={section} cartCount={cartCount} cartTotal={cartTotal} cartVisible={mobilePosView==="cart"} drawerOpen={mobileMenu} navigate={navigate} action={quickAction} showCart={showMobileCart}/></div>
+  </main><MobileQuickNav section={section} cartCount={cartCount} cartTotal={cartTotal} cartVisible={quickCashMode||mobilePosView==="cart"} drawerOpen={mobileMenu} navigate={navigate} action={quickAction} showCart={showMobileCart}/></div>
   {scannerMode&&<CameraBarcodeScanner key={scannerMode} title={scannerMode==="product"?"Ler código para o cadastro":"Ler código para vender"}
     onClose={()=>setScannerMode(null)} onRead={onScannerRead}
     {...(scannerMode==="sale"?{onRegister:registerBarcodeProduct}:{})}/>}
