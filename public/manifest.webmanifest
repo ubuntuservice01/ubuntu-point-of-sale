@@ -1,0 +1,12 @@
+{
+ "name":"Ubuntu POS 360 — Ubuntu Service",
+ "short_name":"Ubuntu POS 360",
+ "description":"Ponto de venda e gestão comercial em modo demonstrativo, com armazenamento local.",
+ "lang":"pt-MZ",
+ "start_url":"/",
+ "scope":"/",
+ "display":"standalone",
+ "background_color":"#ffffff",
+ "theme_color":"#087f61",
+ "icons":[{"src":"/favicon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}

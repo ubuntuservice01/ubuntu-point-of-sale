@@ -15,18 +15,20 @@ import mobilePosCss from "../styles/mobile-pos.css?url";
 import profitCss from "../styles/profitability.css?url";
 import thermalCss from "../styles/thermal-receipt.css?url";
 import alertsCss from "../styles/alerts.css?url";
+import offlineCss from "../styles/offline.css?url";
 
 export const Route = createRootRouteWithContext<{queryClient:QueryClient}>()({
  head:()=>({
   meta:[
    {charSet:"utf-8"},
    {name:"viewport",content:"width=device-width, initial-scale=1"},
+   {name:"theme-color",content:"#087f61"},
    {title:"Ubuntu POS 360 | Ubuntu Service, Lda."},
    {name:"description",content:"Ubuntu POS 360 — Gestão comercial integrada, moderna e acessível."},
    {property:"og:title",content:"Ubuntu POS 360"},
    {property:"og:description",content:"Criando pontes entre o físico e o digital."}
   ],
-  links:[{rel:"stylesheet",href:appCss},{rel:"stylesheet",href:adminCss},{rel:"stylesheet",href:companyCss},{rel:"stylesheet",href:commerceCss},{rel:"stylesheet",href:sectorCss},{rel:"stylesheet",href:expansionCss},{rel:"stylesheet",href:digitalCss},{rel:"stylesheet",href:publicCss},{rel:"stylesheet",href:uxCss},{rel:"stylesheet",href:barcodeCss},{rel:"stylesheet",href:mobilePosCss},{rel:"stylesheet",href:profitCss},{rel:"stylesheet",href:thermalCss},{rel:"stylesheet",href:alertsCss},{rel:"icon",href:"/favicon.svg",type:"image/svg+xml"}]
+  links:[{rel:"stylesheet",href:appCss},{rel:"stylesheet",href:adminCss},{rel:"stylesheet",href:companyCss},{rel:"stylesheet",href:commerceCss},{rel:"stylesheet",href:sectorCss},{rel:"stylesheet",href:expansionCss},{rel:"stylesheet",href:digitalCss},{rel:"stylesheet",href:publicCss},{rel:"stylesheet",href:uxCss},{rel:"stylesheet",href:barcodeCss},{rel:"stylesheet",href:mobilePosCss},{rel:"stylesheet",href:profitCss},{rel:"stylesheet",href:thermalCss},{rel:"stylesheet",href:alertsCss},{rel:"stylesheet",href:offlineCss},{rel:"manifest",href:"/manifest.webmanifest"},{rel:"icon",href:"/favicon.svg",type:"image/svg+xml"}]
  }),
  shellComponent:Shell,
  component:Root

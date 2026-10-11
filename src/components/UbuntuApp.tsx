@@ -1,7 +1,7 @@
 import {useEffect,useMemo,useRef,useState,type FormEvent,type ReactNode} from "react";
 import {Link} from "@tanstack/react-router";
 import {LayoutDashboard,ShoppingCart,Package,Users,Building2,Boxes,ChartNoAxesCombined,Settings,Menu,Search,Plus,ArrowUpRight,Wallet,AlertTriangle,CheckCircle2,ChevronRight,ChevronDown,Bell,Receipt,Trash2,Minus,Store,HandCoins,Usb,ShieldCheck,Warehouse,CalendarDays,Activity,Banknote,CreditCard,Smartphone,Info,Send,Check,X,SlidersHorizontal,Printer,ScanBarcode} from "lucide-react";
-import {initialStore,safeStore,money,roundMoney,calcTotal,keyId,slugify,SECTIONS,MODULES,SECTORS,type Section,type Product,type CartItem,type Store as StoreData,type Customer,type Company,type Payment,type Sale} from "../lib/domain";
+import {money,roundMoney,calcTotal,keyId,slugify,SECTIONS,MODULES,SECTORS,type Section,type Product,type CartItem,type Store as StoreData,type Customer,type Company,type Payment,type Sale} from "../lib/domain";
 import {canGrantCredit,creditPosition} from "../lib/credit";
 import {activeCashSession,saleStockMovements} from "../lib/commercial";
 import {reservedQty} from "../lib/sectors";
@@ -21,6 +21,8 @@ import {prepareScanAudio,playSuccessfulScanBeep} from "../lib/scan-feedback";
 import {useUsbScanner} from "../hooks/useUsbScanner";
 import {snapshotSaleItems} from "../lib/profitability";
 import {ProfitabilityReports} from "./ProfitabilityReports";
+import {useOfflineStore} from "../hooks/useOfflineStore";
+import {OfflineHeaderStatus,OfflineSettingsPanel} from "./OfflineStatus";
 import {AlertCenter,AlertBellPopover} from "./AlertCenter";
 import {alertSummary,markAlertRead,markAlertUnread,operationalAlerts,pruneReadAlerts,type OperationalAlert} from "../lib/alerts";
 import {ThermalReceiptPanel,ThermalReceiptSettingsPanel} from "./ThermalReceipt";
@@ -62,8 +64,7 @@ export function UbuntuApp(){
  const [mobileMenu,setMobileMenu]=useState(false);
  const [mobilePosView,setMobilePosView]=useState<"products"|"cart">("products");
  const [scannerMode,setScannerMode]=useState<"sale"|"product"|null>(null);
- const [data,setData]=useState<StoreData>(()=>initialStore());
- const [loaded,setLoaded]=useState(false);
+ const {data,setData,loaded,overview,online,resetDemo,downloadBackup}=useOfflineStore();
  const [notice,setNotice]=useState<Notice|null>(null);
  const [modal,setModal]=useState<"product"|"customer"|"company"|"payment"|"receipt"|"credit-details"|null>(null);
  const [detailCustomerId,setDetailCustomerId]=useState<string|null>(null);
@@ -89,16 +90,9 @@ export function UbuntuApp(){
  const [productForm,setProductForm]=useState({name:"",sku:"",barcode:"",category:"Mercearia",unit:"un.",purchasePrice:"",price:"",stock:""});
  const [customerForm,setCustomerForm]=useState({name:"",phone:"",creditLimit:""});
  const [companyForm,setCompanyForm]=useState({name:"",sector:"Loja",status:"teste" as Company["status"]});
- useEffect(()=>{try{const raw=window.localStorage.getItem("ubuntu-pos360-demo-v1");if(raw)setData(safeStore(JSON.parse(raw)))}catch{ /* armazenamento indisponível */ }setLoaded(true)},[]);
- useEffect(()=>{if(!loaded)return;try{window.localStorage.setItem("ubuntu-pos360-demo-v1",JSON.stringify(data))}catch{/* demonstração continua na memória */}},[data,loaded]);
- useEffect(()=>{
-  const receive=(event:StorageEvent)=>{
-   if(event.key!=="ubuntu-pos360-demo-v1"||!event.newValue)return;
-   try{setData(safeStore(JSON.parse(event.newValue)))}catch{/* ignorar armazenamento danificado */}
-  };
-  window.addEventListener("storage",receive);
-  return()=>window.removeEventListener("storage",receive);
- },[]);
+
+
+
  const notify=(message:string,kind:Notice["kind"]="success")=>{setNotice({message,kind})};
  const audit=(action:string,description:string)=>({id:keyId(),createdAt:new Date().toISOString(),action,description});
  const navigate=(next:Section)=>{setSection(next);setAlertReference("");setMobileMenu(false);if(next==="pos")setMobilePosView("products");setQuery("");setProductPage(1);setCategory("Todos");setNotice(null);setHeaderPanel(null);setGlobalSearch("");const group=navGroupFor(next);if(group)setOpenGroups(prev=>({...prev,[group.id]:true}));};
@@ -257,7 +251,8 @@ export function UbuntuApp(){
  };
  const sidebarAlerts=alertCounts.unread;
  const menuSections=NAV_GROUPS.map(group=>({...group,items:group.sections.map(id=>({id,label:sectionLabel(id),Icon:ICONS[id]}))}));
- return <div className="ubuntu-shell">
+ return <div className="ubuntu-shell" aria-busy={!loaded}>
+  {!loaded&&<div className="offline-boot-overlay" role="status"><span>A recuperar os dados do POS neste dispositivo…</span></div>}
   <aside className={"sidebar "+(collapsed?"is-collapsed ":"")+(mobileMenu?"mobile-open":"")}>
    <div className="brand"><span className="brand-mark"><Store size={22} strokeWidth={2.3}/></span>{!collapsed&&<span className="brand-type"><strong>Ubuntu <b>POS 360</b></strong><small>by Ubuntu Service</small></span>}<button className="mobile-close" aria-label="Fechar menu" onClick={()=>setMobileMenu(false)}><X size={20}/></button></div>
    <nav aria-label="Navegação principal">
@@ -284,6 +279,7 @@ export function UbuntuApp(){
      <button type="button" className="ux-header-icon" aria-label={"Alertas ("+sidebarAlerts+" por ler)"} aria-expanded={headerPanel==="alerts"} onClick={()=>setHeaderPanel(headerPanel==="alerts"?null:"alerts")}><Bell size={19}/>{sidebarAlerts>0&&<small>{sidebarAlerts>99?"99+":sidebarAlerts}</small>}</button>
      {headerPanel==="alerts"&&<AlertBellPopover alerts={activeAlerts} readIds={data.readAlertIds} onOpen={openAlert} onAll={()=>navigate("alertas")}/>}
     </div>
+    <OfflineHeaderStatus online={online} overview={overview} onDetails={()=>navigate("settings")}/>
     <DemoBadge/>
     <div className="ux-header-popovers">
      <button type="button" className="ux-profile-button" aria-expanded={headerPanel==="profile"} aria-label="Perfil de demonstração" title="Perfil de demonstração" onClick={()=>setHeaderPanel(headerPanel==="profile"?null:"profile")}>US</button>
@@ -340,7 +336,7 @@ export function UbuntuApp(){
    {section==="modules"&&<><PageHeading title="Módulos da plataforma" kicker="FUNCIONALIDADES" subtitle="Escolha os recursos adequados a cada tipo de negócio."/><div className="modules-notice"><Info size={18}/><span>Os módulos de farmácias, restaurantes, bares, talhos, produção, grossistas, catálogo online, encomendas digitais, entregas e fidelização já podem ser testados no frontend.</span></div><div className="module-grid">{MODULES.map((m,i)=>{const iClass=i%6;return <article className="surface module-card" key={m}><span className={"module-icon module-"+iClass}><Boxes size={25}/></span><h3>{m}</h3><p>{moduleDescription(m)}</p></article>})}</div></>}
    {section==="reports"&&<><ProfitabilityReports data={data} go={navigate}/><section className="surface table-panel"><div className="panel-head"><div><h2>Histórico de vendas</h2><p>Dados locais — não constituem facturação</p></div></div>{data.sales.length===0?<Empty icon={Receipt} title="Nenhuma venda registada" description="As vendas simuladas realizadas no ponto de venda aparecem aqui." action={<button className="primary-btn" onClick={()=>navigate("pos")}>Ir para o ponto de venda</button>}/>:<div className="table-scroll"><table className="data-table"><thead><tr><th>Referência</th><th>Data</th><th>Artigos</th><th>Pagamento</th><th>Total</th><th>Comprovativo</th></tr></thead><tbody>{data.sales.map(s=><tr key={s.id}><td><b>{s.id}</b></td><td>{shortDate(s.createdAt)}</td><td>{s.items.reduce((sum,p)=>sum+p.qty,0)}</td><td>{paymentText[s.method]}</td><td className="num-text">{money(s.total)}</td><td><button type="button" className="thermal-history-print" aria-label={"Reimprimir comprovativo "+s.id} onClick={()=>{setReceipt(s);setReceiptFresh(false);setModal("receipt")}}><Printer size={15}/> Imprimir</button></td></tr>)}</tbody></table></div>}</section></>}
    {(["cash","suppliers","purchases","inventory","returns","expenses","finance"] as const).includes(section as "cash")&&<CommercialOperations section={section as "cash"|"suppliers"|"purchases"|"inventory"|"returns"|"expenses"|"finance"} data={data} onChange={setData} notify={notify} go={navigate}/>}
-   {section==="settings"&&<><PageHeading title="Definições" kicker="CONFIGURAÇÃO" subtitle="Consulte o idioma, a moeda e as informações desta demonstração."/><section className="surface settings-panel"><div className="settings-heading"><div className="settings-icon"><SlidersHorizontal size={24}/></div><div><h2>Ambiente de demonstração</h2><p>Os dados são guardados apenas neste navegador e não são partilhados com outras empresas.</p></div></div><div className="setting-line"><div><b>Moeda principal</b><span>Metical moçambicano</span></div><strong>MZN</strong></div><div className="setting-line"><div><b>Idioma</b><span>Português de Moçambique</span></div><strong>pt-MZ</strong></div><div className="setting-line"><div><b>Ambiente</b><span>Sem ligação ao Supabase ou pagamentos externos</span></div><span className="table-state warning">Demonstração</span></div><ThermalReceiptSettingsPanel value={data.receiptSettings} onSave={settings=>{setData(old=>({...old,receiptSettings:settings}));notify("Configuração dos comprovativos guardada neste navegador.")}}/><div className="danger-zone"><h3>Limpar dados da demonstração</h3><p>Repõe os produtos de exemplo e apaga clientes, empresas e vendas simuladas guardados neste navegador.</p><button className="danger-btn" onClick={()=>{if(window.confirm("Tem a certeza de que pretende apagar os dados desta demonstração?")){setData(initialStore());setCart([]);notify("Dados de demonstração repostos.");}}}><Trash2 size={16}/> Repor demonstração</button></div></section></>}
+   {section==="settings"&&<><PageHeading title="Definições" kicker="CONFIGURAÇÃO" subtitle="Consulte o idioma, a moeda e as informações desta demonstração."/><section className="surface settings-panel"><div className="settings-heading"><div className="settings-icon"><SlidersHorizontal size={24}/></div><div><h2>Ambiente de demonstração</h2><p>Os dados são guardados apenas neste navegador e não são partilhados com outras empresas.</p></div></div><div className="setting-line"><div><b>Moeda principal</b><span>Metical moçambicano</span></div><strong>MZN</strong></div><div className="setting-line"><div><b>Idioma</b><span>Português de Moçambique</span></div><strong>pt-MZ</strong></div><div className="setting-line"><div><b>Ambiente</b><span>Sem ligação ao Supabase ou pagamentos externos</span></div><span className="table-state warning">Demonstração</span></div><OfflineSettingsPanel online={online} loaded={loaded} overview={overview} downloadBackup={downloadBackup}/><ThermalReceiptSettingsPanel value={data.receiptSettings} onSave={settings=>{setData(old=>({...old,receiptSettings:settings}));notify("Configuração dos comprovativos guardada neste navegador.")}}/><div className="danger-zone"><h3>Limpar dados da demonstração</h3><p>Repõe os produtos de exemplo e apaga clientes, empresas e vendas simuladas guardados neste navegador.</p><button className="danger-btn" onClick={()=>{if(window.confirm("Tem a certeza de que pretende apagar os dados desta demonstração?")){resetDemo();setCart([]);notify("Reposição da demonstração solicitada. Aguarde a confirmação da gravação local.");}}}><Trash2 size={16}/> Repor demonstração</button></div></section></>}
    <footer className="app-footer">Uma plataforma desenvolvida pela <b>Ubuntu Service, Lda.</b> <span>·</span> Criando pontes entre o físico e o digital.</footer>
   </main><MobileQuickNav section={section} cartCount={cartCount} cartTotal={cartTotal} cartVisible={mobilePosView==="cart"} drawerOpen={mobileMenu} navigate={navigate} action={quickAction} showCart={showMobileCart}/></div>
   {scannerMode&&<CameraBarcodeScanner key={scannerMode} title={scannerMode==="product"?"Ler código para o cadastro":"Ler código para vender"}

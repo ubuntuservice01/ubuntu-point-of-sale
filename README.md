@@ -31,6 +31,10 @@ bun run dev
 bun run build
 ```
 
+## Passo 5/5 — Modo offline e preparação da sincronização
+
+O POS passa a usar **IndexedDB** como armazenamento principal (quando suportado), com uma fila local de mudanças pendentes, identificação de operações, cache da página principal e recursos estáticos por Service Worker, aviso online/offline e exportação manual JSON. **Não comunica nem sincroniza com Supabase nesta etapa**; a fila só pode ser enviada após implementar API autenticada, idempotente e multiempresa. Consultar [Manual do Modo Offline](docs/MODO-OFFLINE-2026-10-11.md).
+
 ## Passo 4/5 — Central de alertas operacionais
 
 Nova página **Central de alertas** e sino integrado, com avisos de stock, fiado vencido, validade de lotes e encomendas pendentes. Inclui filtros, prioridades, leitura de avisos e limites configuráveis. Os dados vêm **exclusivamente do navegador**: não são notificações push nem mensagens externas. Ver [Documentação dos alertas](docs/ALERTAS-OPERACIONAIS-2026-10-11.md).

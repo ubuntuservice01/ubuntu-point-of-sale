@@ -1,0 +1,40 @@
+/* Ubuntu POS 360 — estado offline e armazenamento local. */
+.offline-header-status{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:38px;border:1px solid #cbe5d4;border-radius:9px;padding:8px 10px;background:#eff9f2;color:#087f61;font-size:11px;font-weight:800;white-space:nowrap}
+.offline-header-status.offline{background:#fff7e9;border-color:#f2d8a9;color:#9b6716}
+.offline-header-status:hover{filter:brightness(.98)}
+.offline-header-status small{font-size:10px;background:#fff;border:1px solid currentColor;border-radius:11px;padding:3px 6px}
+.offline-settings-card{background:#fff;border:1px solid #d9e6de;border-radius:12px;padding:20px;margin:18px 0}
+.offline-settings-head{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.offline-settings-head h2{font-size:17px;margin:0 0 5px}
+.offline-settings-head p{font-size:12px;color:#64748b;line-height:1.6;margin:0}
+.offline-settings-icon{display:grid;place-items:center;background:#e8f7ef;color:#087f61;border-radius:10px;width:45px;height:45px;flex:none}
+.offline-status-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.offline-status-grid>div{display:grid;gap:7px;border:1px solid #e0e8e3;border-radius:10px;padding:14px;min-width:0;background:#fcfefd}
+.offline-status-grid span{display:flex;align-items:center;gap:7px;color:#536474;font-size:11px;font-weight:800}
+.offline-status-grid span svg{color:#087f61;flex:none}
+.offline-status-grid strong{font-size:15px;color:#17233b;overflow-wrap:anywhere}
+.offline-status-grid small{font-size:11px;color:#64748b;line-height:1.6}
+.offline-warning{display:flex;align-items:start;gap:10px;margin-top:15px;padding:12px;background:#fff7e8;border:1px solid #f2d9ac;border-radius:9px;color:#896019;font-size:12px;line-height:1.6}
+.offline-warning svg{flex:none;margin-top:2px}
+.offline-last-save{display:flex;align-items:center;gap:8px;font-size:11px;color:#64748b;margin-top:15px}
+.offline-last-save svg{color:#087f61}
+.offline-backup-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:17px;padding:14px;border:1px solid #cde2d5;background:#f5faf7;border-radius:10px}
+.offline-backup-row strong{font-size:12px;color:#334155}
+.offline-backup-row p{font-size:11px;line-height:1.5;color:#64748b;margin:5px 0 0}
+.offline-backup-row button{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid #087f61;border-radius:9px;padding:10px 13px;min-height:44px;background:#087f61;color:#fff;white-space:nowrap;font-size:12px;font-weight:800}
+.offline-backup-row button:disabled{opacity:.5;cursor:not-allowed}
+.offline-disclaimer{display:flex;align-items:start;gap:9px;font-size:11px;color:#64748b;line-height:1.6;margin:15px 0 0}
+.offline-disclaimer svg{flex:none;color:#087f61;margin-top:2px}
+@media(max-width:900px){.offline-header-status{min-height:37px;padding:8px 9px}.offline-header-status span{display:none}.offline-header-status small{display:inline}}
+@media(max-width:650px){
+ .offline-settings-card{padding:14px}
+ .offline-settings-head{align-items:start}
+ .offline-status-grid{grid-template-columns:1fr}
+ .offline-backup-row{flex-direction:column;align-items:stretch}
+ .offline-backup-row button{min-height:51px;width:100%}
+ .offline-header-status{min-width:43px;min-height:43px}
+}
+
+/* Impede vendas enquanto o histórico durável está a ser restaurado. */
+.offline-boot-overlay{position:fixed;inset:0;z-index:99999;background:#f4faf7f5;display:grid;place-items:center;padding:25px}
+.offline-boot-overlay span{max-width:420px;background:#fff;border:1px solid #c8e0d2;border-radius:14px;box-shadow:0 15px 40px #174a2523;padding:20px;text-align:center;color:#086949;font-size:14px;font-weight:850}
