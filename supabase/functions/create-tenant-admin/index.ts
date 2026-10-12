@@ -46,7 +46,7 @@ Deno.serve(async (req)=>{
   const {error:moduleError}=await service.from("tenant_modules").insert({tenant_id:tenantId,module_code:sectors[sector]});
   if(moduleError){await service.from("tenants").delete().eq("id",tenantId);return reply({error:"Erro ao atribuir módulo."},500)}
  }
- const redirectTo=new URL("/empresa",redirectBase).toString();
+ const redirectTo=new URL("/login",redirectBase).toString();
  const {data:invitation,error:inviteError}=await service.auth.admin.inviteUserByEmail(adminEmail,{...(redirectTo?{redirectTo}:{}),data:{display_name:adminName}});
  if(inviteError||!invitation.user){
   await service.from("tenants").delete().eq("id",tenantId);
