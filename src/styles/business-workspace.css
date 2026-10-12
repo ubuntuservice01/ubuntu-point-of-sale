@@ -41,3 +41,35 @@
 @media(max-width:650px){.bw-landing-header{padding:17px;flex-direction:column}.bw-sector-chip{max-width:none}.bw-service-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.bw-service-card{min-height:165px;padding:12px}.bw-capabilities{padding:14px}.bw-kpis{gap:9px}.bw-kpis article{padding:13px}}
 @media(max-width:360px){.bw-service-grid{grid-template-columns:1fr}.bw-kpis{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.bw-landing *{transition:none!important;animation:none!important}}
+
+/* Directório visível de todos os serviços contratados no ecrã sectorial. */
+.bw-sector-services{display:grid;gap:14px;min-width:0;padding:17px;border:1px solid #d9e9df;border-radius:14px;background:linear-gradient(117deg,#f7fdf9,#fff 60%);margin-bottom:16px}
+.bw-sector-services-heading{display:flex;align-items:start;justify-content:space-between;gap:12px}
+.bw-sector-services-heading h2{font-size:17px;color:#17233b;margin:0 0 5px}
+.bw-sector-services-heading p{font-size:11px;line-height:1.55;color:#64748b;margin:0}
+.bw-sector-count{flex:none;display:inline-flex;border-radius:8px;border:1px solid #cce5d5;background:#ebf9f1;color:#087f61;padding:7px 10px;font-size:10px;font-weight:850}
+.bw-sector-links{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.bw-sector-link{display:flex;align-items:center;gap:9px;min-width:0;min-height:75px;padding:10px;border-radius:10px;border:1px solid #e0e9e3;background:#fff;text-align:left;color:#17233b;cursor:pointer}
+.bw-sector-link:hover:not(:disabled){border-color:#8fc6a5;background:#eefaf2;box-shadow:0 3px 12px #135d2a0b}
+.bw-sector-link:focus-visible{outline:3px solid #0a845f69;outline-offset:2px}
+.bw-sector-link>span:nth-child(2){display:grid;flex:1;min-width:0;gap:5px}
+.bw-sector-link strong{font-size:11px;line-height:1.3;overflow-wrap:anywhere}
+.bw-sector-link small{font-size:10px;line-height:1.35;color:#66758a}
+.bw-sector-link>svg:last-of-type{flex:none;color:#087f61}
+.bw-sector-link-icon{display:grid;place-items:center;flex:none;width:33px;height:33px;border-radius:9px;background:#eaf7f0;color:#087f61}
+.bw-sector-link.is-current{border-color:#b5d8c2;background:#edf8f1;cursor:default}
+.bw-sector-current{color:#087f61;font-size:10px;font-weight:850}
+.bw-sector-pharma-hint{display:flex;align-items:start;gap:9px;border-radius:9px;border:1px solid #e7d5b0;background:#fffaf0;padding:11px;color:#855c20;font-size:11px;line-height:1.6;margin:0}
+.bw-sector-pharma-hint svg{flex:none;margin-top:1px}
+@media(max-width:1100px){.bw-sector-links{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:790px){.bw-sector-links{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){
+ .bw-sector-services{padding:12px}
+ .bw-sector-services-heading{flex-direction:column;gap:7px}
+ .bw-sector-links{gap:7px}
+ .bw-sector-link{min-height:78px;padding:9px;gap:7px}
+ .bw-sector-link-icon{width:30px;height:30px}
+ .bw-sector-link strong{font-size:10.5px}
+ .bw-sector-link small{font-size:9.5px}
+}
+@media(max-width:380px){.bw-sector-links{grid-template-columns:1fr}}

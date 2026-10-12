@@ -113,3 +113,43 @@ export function emptyBusinessStore():Store{
 import {initialStore as requireInitialStore} from "./domain";
 import {JOURNALED_COLLECTIONS} from "./offline-model";
 const EMPTY_COLLECTIONS=JOURNALED_COLLECTIONS.filter(k=>k!=="operators"&&k!=="operatorApprovals");
+
+/** Um directório compacto dos serviços REAIS disponíveis em cada negócio.
+ * Não cria funcionalidades inexistentes nem ignora licença ou perfil do operador.
+ */
+export const SECTOR_SERVICE_SECTIONS:Record<Exclude<BusinessKind,"loja">,readonly Section[]>={
+ farmacia:["farmacia","products","inventory","purchases","suppliers","customers","cash","pos","returns","reports","finance","expenses","alertas","operators","settings"],
+ restaurante:["restaurante","pos","products","inventory","purchases","suppliers","customers","cash","returns","reports","finance","expenses","alertas","operators","settings"],
+ bar:["bar","pos","products","inventory","purchases","suppliers","customers","cash","returns","reports","finance","expenses","alertas","operators","settings"],
+ talho:["talho","pos","products","inventory","purchases","suppliers","customers","cash","returns","reports","finance","expenses","alertas","operators","settings"],
+ padaria:["producao","pos","products","inventory","purchases","suppliers","customers","cash","returns","reports","finance","expenses","alertas","operators","settings"],
+ grossista:["grossistas","pos","products","inventory","purchases","suppliers","customers","cash","returns","reports","finance","expenses","alertas","operators","settings"]
+};
+export const SECTOR_SERVICE_HELP:Partial<Record<Section,string>>={
+ farmacia:"Lotes, validade e dispensa FEFO demonstrativa",
+ restaurante:"Mesas, comandas e preparação",
+ bar:"Mesas, comandas e atendimento de bar",
+ talho:"Pesagem, vendas em kg, cortes e quebras",
+ producao:"Receitas, ordens e histórico de produção",
+ grossistas:"Preços por quantidade, reservas e expedições",
+ pos:"Vender artigos fora de lotes farmacêuticos",
+ products:"Cadastro, códigos, preços e stock",
+ inventory:"Movimentos e ajustes de inventário",
+ purchases:"Entradas e compras de mercadorias",
+ suppliers:"Fornecedores e pagamentos",
+ customers:"Clientes, fiado e recebimentos",
+ cash:"Abertura, turnos e fecho de caixa",
+ returns:"Devoluções com permissões",
+ reports:"Vendas e histórico",
+ finance:"Margens e rentabilidade estimada",
+ expenses:"Registo de despesas",
+ alertas:"Stock baixo, validade e dívidas vencidas",
+ operators:"Identificação e permissões da equipa",
+ settings:"Definições do estabelecimento"
+};
+export function sectorServiceSections(
+ workspace:BusinessWorkspace,allowed:(section:Section)=>boolean
+):Section[]{
+ if(workspace.kind==="loja"||!workspace.licensed)return [];
+ return SECTOR_SERVICE_SECTIONS[workspace.kind].filter(s=>businessAllows(workspace,s)&&allowed(s));
+}

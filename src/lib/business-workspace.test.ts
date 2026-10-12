@@ -1,8 +1,9 @@
 import {describe,expect,it} from "vitest";
 import {initialAdminStore,type AdminTenant} from "./admin-demo";
 import {baseBusinessSections,businessAllows,businessKind,businessMenuGroups,BUSINESS_CONFIG,
- emptyBusinessStore,mandatorySectorAddon,resolveBusinessWorkspace} from "./business-workspace";
+ emptyBusinessStore,mandatorySectorAddon,resolveBusinessWorkspace,sectorServiceSections,SECTOR_SERVICE_SECTIONS} from "./business-workspace";
 import {dateISO,addDays} from "./admin-demo";
+import {roleCanSection} from "./operators";
 
 const today="2026-10-12";
 const admin=initialAdminStore(today);
@@ -109,5 +110,48 @@ describe("Contrato comercial — área de trabalho por negócio",()=>{
   expect(data.onlineOrders).toEqual([]);
   expect(data.operators.length).toBe(1);
   expect(data.catalogSettings.enabled).toBe(false);
+ });
+});
+
+describe("Catálogo de serviços visíveis dentro de cada módulo comercial",()=>{
+ it("Farmácia inclui todos os serviços comerciais contratados e acessíveis ao gerente, sem serviços de outros sectores",()=>{
+  const w=resolveBusinessWorkspace(admin,"demo-farm",today)!;
+  const list=sectorServiceSections(w,s=>roleCanSection("gerente",s));
+  for(const item of ["farmacia","products","inventory","purchases","suppliers","customers","cash","pos","reports","finance","returns","expenses","operators","settings"] as const)
+   expect(list).toContain(item);
+  expect(list).not.toContain("talho");
+  expect(list).not.toContain("restaurante");
+  expect(list).not.toContain("catalogo");
+  expect(list).not.toContain("entregas");
+ });
+ it("Caixa da Farmácia não recebe gestão de preços, operadores nem relatórios",()=>{
+  const w=resolveBusinessWorkspace(admin,"demo-farm",today)!;
+  const list=sectorServiceSections(w,s=>roleCanSection("caixa",s)||s==="farmacia");
+  expect(list).toContain("farmacia");
+  for(const item of ["pos","cash","customers","alertas"] as const)expect(list).toContain(item);
+  for(const item of ["products","purchases","operators","reports","finance","settings"] as const)expect(list).not.toContain(item);
+ });
+ it("Talho, Restaurante, Bar, Padaria e Grossistas mostram apenas o próprio sector e as ferramentas autorizadas",()=>{
+  const specs=[["Talho","talho","talhos"],["Restaurante","restaurante","restaurantes"],["Bar","bar","bares"],
+   ["Padaria","padaria","producao"],["Grossista","grossista","grossistas"]] as const;
+  for(const [sector,kind,special] of specs){
+   const source={...admin,tenants:[tenant(kind,sector,mandatorySectorAddon(sector))]};
+   const w=resolveBusinessWorkspace(source,kind,today)!;
+   const list=sectorServiceSections(w,s=>roleCanSection("gerente",s));
+   expect(w.licensed).toBe(true);
+   expect(list).toContain(special);
+   for(const common of ["pos","cash","products","inventory","purchases","suppliers","customers","reports"])
+    expect(list).toContain(common);
+   expect(list.filter(s=>["farmacia","talho","restaurante","bar","producao","grossistas"].includes(s))).toEqual([special]);
+   expect(SECTOR_SERVICE_SECTIONS[w.kind as Exclude<typeof w.kind,"loja">].length).toBeGreaterThan(10);
+  }
+ });
+ it("Plano sem licença não mostra atalhos, mesmo se o sector existir",()=>{
+  const suspended=resolveBusinessWorkspace(admin,"demo-loja",today)!;
+  expect(sectorServiceSections(suspended,()=>true)).toEqual([]);
+  const invalid={...admin,tenants:[tenant("missing","Farmácia",[])]};
+  const workspace=resolveBusinessWorkspace(invalid,"missing",today)!;
+  expect(workspace.licensed).toBe(false);
+  expect(sectorServiceSections(workspace,()=>true)).toEqual([]);
  });
 });

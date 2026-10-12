@@ -36,6 +36,39 @@ describe("Espaço de trabalho sectorial integrado no POS",()=>{
   fireEvent.click(within(nav).getByRole("button",{name:"Dispensa, lotes e validade"}));
   expect(screen.getByRole("heading",{name:"Farmácias"})).toBeTruthy();
  });
+ it("Farmácia tem directório completo e Compras/Fornecedores abrem páginas reais",async()=>{
+  render(<UbuntuApp tenantId="demo-farm"/>);
+  await waitFor(()=>expect(screen.getByRole("heading",{name:"Farmácia Modelo"})).toBeTruthy());
+  const nav=screen.getByRole("navigation",{name:"Navegação principal"});
+  fireEvent.click(within(nav).getByRole("button",{name:"Dispensa, lotes e validade"}));
+  const directory=screen.getByRole("region",{name:"Serviços disponíveis para Gestão de farmácia"});
+  for(const target of ["Medicamentos / produtos","Compras e entradas","Fornecedores","Clientes e fiado",
+    "Caixa e turnos","Relatórios","Inventário e movimentos","Operadores e permissões"]){
+   const label=target==="Medicamentos / produtos"?"Produtos e preços":target;
+   expect(within(directory).getByRole("button",{name:new RegExp("^"+label)})).toBeTruthy();
+  }
+  expect(within(directory).queryByRole("button",{name:/Pesagem e cortes/})).toBeNull();
+  expect(screen.getByRole("button",{name:"Nova dispensa"}) instanceof HTMLButtonElement).toBe(true);
+  expect((screen.getByRole("button",{name:"Nova dispensa"}) as HTMLButtonElement).disabled).toBe(true);
+  expect(screen.getByText(/A dispensa estará disponível assim que existir um lote válido/)).toBeTruthy();
+  fireEvent.click(within(directory).getByRole("button",{name:/^Compras e entradas/}));
+  expect(screen.getByRole("heading",{name:"Compras a fornecedores"})).toBeTruthy();
+  fireEvent.click(within(nav).getByRole("button",{name:"Dispensa, lotes e validade"}));
+  const directoryAgain=screen.getByRole("region",{name:"Serviços disponíveis para Gestão de farmácia"});
+  fireEvent.click(within(directoryAgain).getByRole("button",{name:/^Fornecedores/}));
+  expect(screen.getByRole("heading",{name:"Fornecedores"})).toBeTruthy();
+ });
+ it("Talho apresenta os serviços do negócio dentro do sector e nenhum atalho farmacêutico",async()=>{
+  render(<UbuntuApp tenantId="demo-talho"/>);
+  await waitFor(()=>expect(screen.getByRole("heading",{name:"Talho Modelo"})).toBeTruthy());
+  const nav=screen.getByRole("navigation",{name:"Navegação principal"});
+  fireEvent.click(within(nav).getByRole("button",{name:"Pesagem e cortes"}));
+  const directory=screen.getByRole("region",{name:"Serviços disponíveis para Gestão de talho"});
+  expect(within(directory).getByRole("button",{name:/^Ponto de venda e Caixa Rápido/})).toBeTruthy();
+  expect(within(directory).getByRole("button",{name:/^Compras e entradas/})).toBeTruthy();
+  expect(within(directory).getByRole("button",{name:/^Relatórios/})).toBeTruthy();
+  expect(within(directory).queryByRole("button",{name:/^Dispensa, lotes e validade/})).toBeNull();
+ });
  it("talho recebe pesagem e cortes, vendas e stock, sem farmácia",async()=>{
   render(<UbuntuApp tenantId="demo-talho"/>);
   await waitFor(()=>expect(screen.getByRole("heading",{name:"Talho Modelo"})).toBeTruthy());

@@ -5,6 +5,8 @@
 **Tipo:** revisão estática do código e da pipeline de testes; **não inclui** ensaio manual em browser, impressoras, scanner, servidor de produção ou validação legal.  
 **Alterações ao Supabase:** nenhuma.
 
+> **Actualização posterior nesta data:** a ligação demonstrativa entre Super Admin, módulos, licença e POS foi implementada e foi acrescentado um directório de serviços dentro dos módulos sectoriais. A revisão abaixo descreve um estado anterior. Consulte [Auditoria actualizada](AUDITORIA-MODULOS-ATUALIZACAO-2026-10-12.md) para o parecer vigente.
+
 ## Parecer executivo
 
 **NÃO APROVADO para activação da base de dados e comercialização como plataforma SaaS multiempresa.**  

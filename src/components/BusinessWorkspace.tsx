@@ -1,5 +1,5 @@
 import {ArrowRight,Building2,CheckCircle2,Clock3,LockKeyhole,Package,ShoppingCart,Warehouse,Wallet,AlertTriangle,Info,ShieldAlert} from "lucide-react";
-import {BUSINESS_CONFIG,BUSINESS_SECTION_LABELS,type BusinessWorkspace} from "../lib/business-workspace";
+import {BUSINESS_CONFIG,BUSINESS_SECTION_LABELS,SECTOR_SERVICE_HELP,sectorServiceSections,type BusinessWorkspace} from "../lib/business-workspace";
 import type {Section,Store} from "../lib/domain";
 import {money} from "../lib/domain";
 const sectionIcons:Partial<Record<Section,typeof Package>>={
@@ -34,6 +34,42 @@ export function BusinessWelcome({workspace,data,allowed,onNavigate}:{workspace:B
   </div>
   {workspace.kind==="farmacia"&&<div className="bw-compliance"><ShieldAlert size={20}/><p><strong>Atenção à gestão farmacêutica:</strong> a dispensa FEFO e o controlo de validade são demonstrações operacionais. Não substituem validação de receita médica, rastreabilidade legal ou procedimentos de um farmacêutico responsável. Medicamentos com lotes são dispensados na área própria.</p></div>}
   <div className="bw-landing-foot"><Info size={16}/> A organização por sector e a separação de dados nesta fase são locais ao browser. Acesso seguro multiempresa, facturação fiscal e sincronização só com servidor e validação legal.</div>
+ </section>;
+}
+
+/**
+ * Mostra em cada módulo sectorial todas as ferramentas já existentes e
+ * autorizadas para este comerciante. Não cria ecrãs fictícios.
+ */
+export function BusinessSectorServices({workspace,current,allowed,onNavigate}:{
+ workspace:BusinessWorkspace;current:Section;allowed:(section:Section)=>boolean;
+ onNavigate:(section:Section)=>void;
+}){
+ const services=sectorServiceSections(workspace,allowed);
+ if(services.length===0)return null;
+ return <section className="bw-sector-services" aria-label={"Serviços disponíveis para "+workspace.title}>
+  <div className="bw-sector-services-heading"><div>
+   <span className="bw-eyebrow">TODOS OS SERVIÇOS AUTORIZADOS</span>
+   <h2>Ferramentas de {workspace.title.toLocaleLowerCase("pt")}</h2>
+   <p>Além das operações deste sector, o seu plano dá acesso às ferramentas comerciais abaixo. Seleccione para abrir.</p>
+  </div><span className="bw-sector-count">{services.length} serviço(s)</span></div>
+  <div className="bw-sector-links">
+   {services.map(section=>{
+    const Icon=sectionIcons[section]??Package;
+    const isCurrent=section===current;
+    return <button type="button" key={section} className={"bw-sector-link "+(isCurrent?"is-current":"")}
+     aria-current={isCurrent?"page":undefined}
+     disabled={isCurrent} onClick={()=>onNavigate(section)}>
+     <span className="bw-sector-link-icon"><Icon size={19}/></span>
+     <span><strong>{BUSINESS_SECTION_LABELS[section]??section}</strong><small>{SECTOR_SERVICE_HELP[section]??"Ferramenta do estabelecimento"}</small></span>
+     {!isCurrent&&<ArrowRight size={16}/>}
+     {isCurrent&&<span className="bw-sector-current">Aqui</span>}
+    </button>;
+   })}
+  </div>
+  {workspace.kind==="farmacia"&&<p className="bw-sector-pharma-hint"><ShieldAlert size={16}/>
+   <span>Produtos controlados por lote devem ser dispensados na área <b>Dispensa, lotes e validade</b>; o Ponto de Venda geral não substitui o fluxo FEFO. Não existe validação de receita nem pagamento real nesta fase.</span>
+  </p>}
  </section>;
 }
 export function BusinessAccessBlocked({workspace,unknown}:{workspace?:BusinessWorkspace|null;unknown?:boolean}){

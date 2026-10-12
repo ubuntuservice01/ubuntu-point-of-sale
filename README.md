@@ -39,6 +39,10 @@ Perfis **gerente, supervisor, operador de caixa e responsável de stock**, com i
 
 Nas vendas **em dinheiro**, tanto no POS normal como no **Caixa Rápido**, o operador introduz o valor entregue; o sistema calcula automaticamente o troco e só deixa registar a venda com caixa aberto e dinheiro suficiente. O registo guarda o valor recebido e o troco juntamente com a venda, mostra-os no histórico e imprime-os nos comprovativos térmicos de **58 mm e 80 mm**, incluindo reimpressões. O saldo do caixa continua a considerar **apenas o total vendido**, evitando duplicar receita. Vendas antigas sem esses dados, fiado, cartão, M-Pesa e e-Mola não apresentam montantes fictícios. Estes dados são demonstrativos e não confirmam pagamento efectivo.
 
+## Auditoria de módulos e serviços por comerciante — 12/10/2026
+
+Farmácia, Talho, Restaurante, Bar, Padaria e Grossistas receberam um directório de serviços dentro de cada área sectorial, com acessos de acordo com o plano atribuído e o papel do operador. A Farmácia destaca **Nova dispensa**, lotes e os links de Compras, Fornecedores, Caixa, Clientes e Relatórios. **Os módulos ainda não estão completos para produção**. Consulte [Auditoria actualizada e pendências antes do Supabase](docs/AUDITORIA-MODULOS-ATUALIZACAO-2026-10-12.md).
+
 ## Modo Caixa Rápido — operador de balcão
 
 O **Ponto de venda** inclui agora um comutador **Modo Caixa Rápido / Modo normal**, com cartões grandes, carrinho sempre acessível, teclado numérico de quantidades e dinheiro recebido, cálculo de troco, métodos de pagamento e atalhos F2/F4/F8. Utiliza o mesmo fluxo de venda e as mesmas validações de stock/fiado do POS normal. **É uma interface visual de demonstração, não uma permissão RBAC de produção.** Consultar [Manual de Caixa Rápido](docs/MODO-CAIXA-RAPIDO-2026-10-11.md).

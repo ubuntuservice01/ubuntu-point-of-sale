@@ -117,9 +117,15 @@ export function SectorOperations({section,focusReference,data,onChange,notify,go
  return <section className="sc-root">
  {section==="farmacia"&&<>
   <Title eyebrow="GESTÃO FARMACÊUTICA" name="Farmácias" sub="Controle os lotes, as datas de validade e as dispensas demonstrativas." >
-   <button className="sc-outline" onClick={()=>go("products")}><Package size={17}/> Produtos</button>
-   <button className="sc-primary" onClick={openLot} disabled={!activeProducts.length}><Plus size={17}/> Receber lote</button>
+   <button className="sc-outline" type="button" onClick={()=>go("products")}><Package size={17}/> Medicamentos / produtos</button>
+   <button className="sc-outline" type="button" onClick={openLot} disabled={!activeProducts.length} title={!activeProducts.length?"Registe primeiro um produto no catálogo.":"Registar lote e entrada no stock"}><Plus size={17}/> Receber lote</button>
+   <button className="sc-primary" type="button" onClick={openDispense}
+    disabled={!data.pharmaLots.some(l=>l.qty>0&&l.expiryDate>=today)}
+    title={!data.pharmaLots.some(l=>l.qty>0&&l.expiryDate>=today)?"Receba primeiro um lote válido para activar a dispensa.":"Dispensa FEFO com pagamento demonstrativo"}>
+    <Receipt size={17}/> Nova dispensa
+   </button>
   </Title>
+  {!data.pharmaLots.some(l=>l.qty>0&&l.expiryDate>=today)&&<div className="sc-hint" role="status"><Info size={18}/><span>A dispensa estará disponível assim que existir um lote válido com stock. Para começar: cadastre o medicamento em <b>Medicamentos / produtos</b> e depois utilize <b>Receber lote</b>.</span></div>}
   <Hint warning><b>Atenção:</b> este módulo é um protótipo de inventário. Não substitui validação de receitas médicas, controlo de medicamentos sujeitos a receita, rastreabilidade legal ou procedimentos profissionais. Os produtos com lotes devem ser dispensados aqui para respeitar o FEFO.</Hint>
   <div className="sc-stats">
    <Stat title="Lotes registados" value={String(data.pharmaLots.length)} info="Por produto e validade" icon={Layers}/>
