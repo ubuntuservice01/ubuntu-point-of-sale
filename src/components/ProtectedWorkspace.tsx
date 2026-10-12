@@ -1,3 +1,4 @@
+import "../styles/super-admin-login.css";
 import {useEffect,useState} from "react";
 import {LogOut,ShieldCheck} from "lucide-react";
 import {CompanyLive} from "./CompanyLive";
