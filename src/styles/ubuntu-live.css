@@ -1,0 +1,12 @@
+.ubuntu-live button,.ubuntu-company button{border:1px solid #a7cbd0;border-radius:10px;padding:10px 15px;background:#e5f6f5;color:#075c5b;font-weight:700;cursor:pointer;transition:background .18s ease,transform .18s ease}
+.ubuntu-live button:hover,.ubuntu-company button:hover{background:#c5ebe7;transform:translateY(-1px)}
+.ubuntu-live button[aria-pressed="true"]{color:white;background:#067c6a;border-color:#067c6a}
+.ubuntu-live button:disabled,.ubuntu-company button:disabled{opacity:.55;cursor:wait;transform:none}
+.ubuntu-live input,.ubuntu-live select,.ubuntu-company input,.ubuntu-company select{display:block;width:100%;min-width:0;margin-top:5px;padding:12px;border:1px solid #c4d5dc;border-radius:10px;background:white;color:#143842;font:inherit}
+.ubuntu-live input:focus,.ubuntu-live select:focus,.ubuntu-company input:focus,.ubuntu-company select:focus{outline:3px solid #bee7e2;border-color:#077d68}
+.ubuntu-live form label,.ubuntu-company form label{font-size:13px;font-weight:650}
+.ubuntu-live form button[type="submit"],.ubuntu-company form button[type="submit"]{background:#07846a;color:#fff;border-color:#07846a}
+.ubuntu-live form button[type="submit"]:hover,.ubuntu-company form button[type="submit"]:hover{background:#075b50}
+.ubuntu-live article h2,.ubuntu-company article h2{font-size:1.15rem;margin:9px 0}
+.ubuntu-live h1,.ubuntu-company h1{font-size:clamp(1.6rem,3vw,2.4rem);margin:.3rem 0}
+@media(max-width:540px){.ubuntu-live,.ubuntu-company{padding:14px!important}.ubuntu-live nav{gap:6px!important}}
