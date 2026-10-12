@@ -416,7 +416,7 @@ export function UbuntuApp({tenantId}:{tenantId?:string|undefined}={}){
   .filter(id=>allowedSection(id)).map(id=>({id,label:scopedSectionLabel(id),Icon:ICONS[id]}))}))
   .filter(group=>group.items.length>0);
  const operatorSectionAllowed=allowedSection(section);
- if(tenantId&&!merchantLoaded)return <div className="bw-route-loading" role="status">A preparar o espaço de trabalho da empresa…</div>;
+ if(tenantId&&(!merchantLoaded||!loaded||!operatorReady))return <div className="bw-route-loading" role="status">A preparar o espaço de trabalho da empresa…</div>;
  if(tenantId&&merchantLoaded&&!workspace)return <BusinessAccessBlocked unknown/>;
  if(tenantId&&workspace&&!workspace.licensed)return <BusinessAccessBlocked workspace={workspace}/>;
  if(loaded&&operatorReady&&!activeOperator)return <OperatorLogin operators={data.operators} onLogin={loginOperator}/>;
