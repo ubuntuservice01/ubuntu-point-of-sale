@@ -121,8 +121,8 @@ export async function changePasswordUnified(accessToken:string,newPassword:strin
 export async function recoverPassword(email:string){
  // A mensagem será enviada apenas se o SMTP e os URLs de redireccionamento estiverem configurados.
  const redirect=typeof window!=="undefined"?window.location.origin+"/login":undefined;
- await companyApi("/auth/v1/recover",undefined,{
-  method:"POST",body:JSON.stringify({email:email.trim().toLowerCase(),...(redirect?{redirect_to:redirect}:{})})
+ await companyApi("/auth/v1/recover"+(redirect?"?redirect_to="+encodeURIComponent(redirect):""),undefined,{
+  method:"POST",body:JSON.stringify({email:email.trim().toLowerCase()})
  });
 }
 export async function signOutUnified(tokens:CompanyTokens|null){
