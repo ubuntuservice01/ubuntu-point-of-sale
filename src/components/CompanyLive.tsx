@@ -1,3 +1,4 @@
+import "../styles/ubuntu-live.css";
 import {useEffect,useState,type FormEvent} from "react";
 import {companyApi,type CompanyMember} from "../lib/supabase-company-auth";
 type Tenant={id:string;name:string;sector:string;city:string;status:string;license_expires_at:string};
@@ -41,7 +42,7 @@ export function CompanyLive({token,tenantId}:{token:string;tenantId:string}){
   }catch(e){setError(e instanceof Error?e.message:"Não foi possível enviar o convite.");}
   finally{setBusy(false);}
  };
- return <main style={{maxWidth:1100,margin:"auto",padding:24,color:"#193846"}}>
+ return <main className="ubuntu-company" style={{maxWidth:1100,margin:"auto",padding:24,color:"#193846"}}>
   <header style={{display:"flex",justifyContent:"space-between",gap:20,alignItems:"center",flexWrap:"wrap"}}>
    <div><small>UBUNTU POS 360 · A MINHA EMPRESA</small><h1>{tenant?.name??"Painel empresarial"}</h1>
     <p>{tenant?.sector} · {tenant?.city} · {tenant?.status==="trial"?"Em teste":"Licença "+(tenant?.status??"")}</p></div>
@@ -65,7 +66,7 @@ export function CompanyLive({token,tenantId}:{token:string;tenantId:string}){
   </section>
   {open&&<div style={{position:"fixed",inset:0,display:"grid",placeItems:"center",background:"#0c203cbf",padding:16,zIndex:1000}}>
    <section role="dialog" aria-modal="true" aria-label="Convidar funcionário" style={{width:"min(480px,100%)",background:"white",padding:24,borderRadius:14}}>
-    <h2>Novo funcionário</h2><p>Enviaremos um convite individual, sem partilhar palavras-passe.</p>
+    <h2>Novo funcionário</h2>{error&&<p role="alert" style={{color:"#b52b2b"}}>{error}</p>}<p>Enviaremos um convite individual, sem partilhar palavras-passe.</p>
     <form onSubmit={invite} style={{display:"grid",gap:14}}>
      <label>Nome completo<input required minLength={2} value={name} onChange={e=>setName(e.target.value)}/></label>
      <label>Email<input required type="email" value={email} onChange={e=>setEmail(e.target.value)}/></label>
