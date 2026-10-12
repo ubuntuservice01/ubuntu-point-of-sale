@@ -1,6 +1,7 @@
 import {useEffect,useState,type FormEvent} from "react";
 import {LockKeyhole,LogIn,Mail,ShieldCheck,Eye,EyeOff,KeyRound,LogOut} from "lucide-react";
 import {SuperAdminApp} from "./SuperAdminApp";
+import {SuperAdminLive} from "./SuperAdminLive";
 import {
  authenticateTokens,clearTokens,loginAdmin,logoutAdmin,savedTokens,
  setFirstPassword,supabaseAdminConfig,tokensFromInvite,
@@ -19,6 +20,7 @@ export function SuperAdminAuthGate(){
  const [confirm,setConfirm]=useState("");
  const [reveal,setReveal]=useState(false);
  const [busy,setBusy]=useState(false);
+ const [showDemo,setShowDemo]=useState(false);
  const [message,setMessage]=useState("");
  useEffect(()=>{
   if(!supabaseAdminConfig()){setPhase("configuration");return;}
@@ -68,7 +70,10 @@ export function SuperAdminAuthGate(){
    <ShieldCheck size={16}/><span>Sessão Supabase: {identity.email}</span>
    <button type="button" onClick={()=>void exit()} disabled={busy}><LogOut size={15}/> Sair</button>
   </div>
-  <SuperAdminApp/>
+  <div style={{padding:"8px 24px",display:"flex",justifyContent:"flex-end",background:"#e9f4f4"}}>
+   <button type="button" onClick={()=>setShowDemo(v=>!v)}>{showDemo?"Voltar às empresas reais":"Abrir demonstração local"}</button>
+  </div>
+  {showDemo?<SuperAdminApp/>:<SuperAdminLive token={tokens?.access_token??""}/>}
  </>;
  return <main className="supabase-admin-auth">
   <section className="supabase-admin-auth-card">
