@@ -40,9 +40,10 @@ Deno.serve(async (req)=>{
  const tenantId=tenant.id;
  const {error:branchError}=await service.from("branches").insert({tenant_id:tenantId,name:"Sede",code:"SEDE",city,active:true});
  if(branchError){await service.from("tenants").delete().eq("id",tenantId);return reply({error:"Erro ao criar filial inicial."},500)}
- const {error:moduleError}=await service.from("tenant_modules").insert(
-  sectors[sector]?[{tenant_id:tenantId,module_code:sectors[sector]}]:[]);
- if(moduleError){await service.from("tenants").delete().eq("id",tenantId);return reply({error:"Erro ao atribuir módulo."},500)}
+ if(sectors[sector]){
+  const {error:moduleError}=await service.from("tenant_modules").insert({tenant_id:tenantId,module_code:sectors[sector]});
+  if(moduleError){await service.from("tenants").delete().eq("id",tenantId);return reply({error:"Erro ao atribuir módulo."},500)}
+ }
  const redirectBase=Deno.env.get("POS_APP_URL");
  const redirectTo=redirectBase && /^https:\/\//.test(redirectBase)?new URL("/auth/callback",redirectBase).toString():undefined;
  const {data:invitation,error:inviteError}=await service.auth.admin.inviteUserByEmail(adminEmail,{...(redirectTo?{redirectTo}:{}),data:{display_name:adminName}});
