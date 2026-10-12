@@ -29,6 +29,8 @@ Deno.serve(async (req)=>{
  !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adminEmail)||adminName.length<2)return reply({error:"Verifique os dados da empresa e do administrador."},422);
  const {data:plan,error:planError}=await service.from("plans").select("id,max_branches,max_users").eq("code",planCode).eq("enabled",true).single();
  if(planError||!plan)return reply({error:"Plano indisponível."},422);
+ const redirectBase=Deno.env.get("POS_APP_URL");
+ if(!redirectBase||!/^https:\/\//.test(redirectBase))return reply({error:"Configure POS_APP_URL com o domínio HTTPS publicado para permitir convites de administradores."},503);
  const {data:existing}=await service.from("tenants").select("id").eq("slug",slug).maybeSingle();
  if(existing)return reply({error:"Este endereço de empresa já está em uso."},409);
  const expiry=new Date();expiry.setUTCDate(expiry.getUTCDate()+14);
@@ -44,8 +46,7 @@ Deno.serve(async (req)=>{
   const {error:moduleError}=await service.from("tenant_modules").insert({tenant_id:tenantId,module_code:sectors[sector]});
   if(moduleError){await service.from("tenants").delete().eq("id",tenantId);return reply({error:"Erro ao atribuir módulo."},500)}
  }
- const redirectBase=Deno.env.get("POS_APP_URL");
- const redirectTo=redirectBase && /^https:\/\//.test(redirectBase)?new URL("/empresa",redirectBase).toString():undefined;
+ const redirectTo=new URL("/empresa",redirectBase).toString();
  const {data:invitation,error:inviteError}=await service.auth.admin.inviteUserByEmail(adminEmail,{...(redirectTo?{redirectTo}:{}),data:{display_name:adminName}});
  if(inviteError||!invitation.user){
   await service.from("tenants").delete().eq("id",tenantId);
