@@ -1,7 +1,8 @@
 import {initialStore,safeStore,type Store} from "./domain";
+import {emptyBusinessStore} from "./business-workspace";
 import {
  OFFLINE_DB_NAME,OFFLINE_LEGACY_KEY,OFFLINE_LOCAL_JOURNAL_KEY,OFFLINE_SCHEMA,
- backupEnvelope,deviceId,newOpId,queueCounts,type LocalMode,type OfflineOp,type Snapshot
+ backupEnvelope,deviceId,newOpId,queueCounts,scopedOfflineKey,type LocalMode,type OfflineOp,type Snapshot
 } from "./offline-model";
 
 type DbSnapshot=Snapshot&{writeId:string};
@@ -10,14 +11,15 @@ export type OfflineBoot={
  pending:number;conflicts:number;warning:string|null
 };
 export type OfflineWrite={writeId:string|null;mode:LocalMode;savedAt:string;pending:number;conflicts:number;warning:string|null};
-let databasePromise:Promise<IDBDatabase|null>|null=null;
+const databasePromises=new Map<string,Promise<IDBDatabase|null>>();
 const dbAvailable=()=>typeof indexedDB!=="undefined";
-function db():Promise<IDBDatabase|null>{
+function db(scope?:string):Promise<IDBDatabase|null>{
+ const dbName=scopedOfflineKey(OFFLINE_DB_NAME,scope);
  if(!dbAvailable())return Promise.resolve(null);
- if(databasePromise)return databasePromise;
- databasePromise=new Promise(resolve=>{
+ const prev=databasePromises.get(dbName);if(prev)return prev;
+ const promise=new Promise<IDBDatabase|null>(resolve=>{
   let request:IDBOpenDBRequest;
-  try{request=indexedDB.open(OFFLINE_DB_NAME,1)}
+  try{request=indexedDB.open(dbName,1)}
   catch{resolve(null);return}
   request.onupgradeneeded=()=>{
    const database=request.result;
@@ -28,23 +30,24 @@ function db():Promise<IDBDatabase|null>{
   request.onerror=()=>resolve(null);
   request.onblocked=()=>resolve(null);
  });
- return databasePromise;
+ databasePromises.set(dbName,promise);
+ return promise;
 }
-function readLegacy():Store|null{
- try{const raw=window.localStorage.getItem(OFFLINE_LEGACY_KEY);return raw?safeStore(JSON.parse(raw)):null}
+function readLegacy(scope?:string):Store|null{
+ try{const raw=window.localStorage.getItem(scopedOfflineKey(OFFLINE_LEGACY_KEY,scope));return raw?safeStore(JSON.parse(raw)):null}
  catch{return null}
 }
-function readLegacyOps():OfflineOp[]{
+function readLegacyOps(scope?:string):OfflineOp[]{
  try{
-  const raw=window.localStorage.getItem(OFFLINE_LOCAL_JOURNAL_KEY);
+  const raw=window.localStorage.getItem(scopedOfflineKey(OFFLINE_LOCAL_JOURNAL_KEY,scope));
   const result=raw?JSON.parse(raw) as unknown:null;
   return Array.isArray(result)?result.filter((x):x is OfflineOp=>
    !!x&&typeof x==="object"&&typeof x.id==="string"&&typeof x.collection==="string"&&
    (x.status==="pending"||x.status==="conflict")&&typeof x.recordId==="string"):[]; 
  }catch{return []}
 }
-function mirror(store:Store):boolean{
- try{window.localStorage.setItem(OFFLINE_LEGACY_KEY,JSON.stringify(store));return true}
+function mirror(store:Store,scope?:string):boolean{
+ try{window.localStorage.setItem(scopedOfflineKey(OFFLINE_LEGACY_KEY,scope),JSON.stringify(store));return true}
  catch{return false}
 }
 const requestResult=<T>(request:IDBRequest<T>)=>new Promise<T>((resolve,reject)=>{
@@ -65,9 +68,9 @@ async function readDatabase(db:IDBDatabase):Promise<DbSnapshot|null>{
  await done;
  return result??null;
 }
-export async function queuedOperations():Promise<OfflineOp[]>{
- const database=await db();
- if(!database)return readLegacyOps();
+export async function queuedOperations(scope?:string):Promise<OfflineOp[]>{
+ const database=await db(scope);
+ if(!database)return readLegacyOps(scope);
  const tx=database.transaction("outbox","readonly");
  const done=transactionComplete(tx);
  const items=await requestResult(tx.objectStore("outbox").getAll()) as OfflineOp[];
@@ -75,29 +78,30 @@ export async function queuedOperations():Promise<OfflineOp[]>{
  return items;
 }
 /** Abre IndexedDB, adoptando o histórico do localStorage apenas na primeira migração. */
-export async function loadOffline():Promise<OfflineBoot>{
- const clientId=deviceId();
- const database=await db();
- const fallback=readLegacy()??initialStore();
+export async function loadOffline(scope?:string):Promise<OfflineBoot>{
+ const clientId=deviceId(scope);
+ const database=await db(scope);
+ // Não importar a demonstração geral para uma empresa.
+ const fallback=readLegacy(scope)??(scope?emptyBusinessStore():initialStore());
  if(!database){
-  const ops=readLegacyOps(),count=queueCounts(ops);
+  const ops=readLegacyOps(scope),count=queueCounts(ops);
   return {state:fallback,clientId,writeId:null,mode:"localStorage",savedAt:null,
    pending:count.pending,conflicts:count.conflicts,warning:"IndexedDB indisponível: os dados ficam apenas no armazenamento local simples."};
  }
  try{
   const existing=await readDatabase(database);
   if(existing?.state){
-   const ops=await queuedOperations(),count=queueCounts(ops);
+   const ops=await queuedOperations(scope),count=queueCounts(ops);
    return {state:safeStore(existing.state),clientId:existing.clientId||clientId,
     writeId:existing.writeId,mode:"indexeddb",savedAt:existing.savedAt,
     pending:count.pending,conflicts:count.conflicts,warning:null};
   }
   // Primeira abertura: importa sem gerar operações retroactivas ou vendas fictícias.
-  const imported=await persistOffline(fallback,[],clientId,null,{baseline:true});
+  const imported=await persistOffline(fallback,[],clientId,null,{baseline:true},scope);
   return {state:fallback,clientId,writeId:imported.writeId,mode:imported.mode,
    savedAt:imported.savedAt,pending:imported.pending,conflicts:imported.conflicts,warning:imported.warning};
  }catch{
-  const ops=readLegacyOps(),count=queueCounts(ops);
+  const ops=readLegacyOps(scope),count=queueCounts(ops);
   return {state:fallback,clientId,writeId:null,mode:"localStorage",savedAt:null,
    pending:count.pending,conflicts:count.conflicts,warning:"Erro ao ler IndexedDB. O armazenamento local simples foi utilizado."};
  }
@@ -109,10 +113,10 @@ export async function loadOffline():Promise<OfflineBoot>{
  */
 export async function persistOffline(
  state:Store,append:readonly OfflineOp[],clientId:string,expectedWriteId:string|null,
- options:{baseline?:boolean;reset?:boolean}={}
+ options:{baseline?:boolean;reset?:boolean}={},scope?:string
 ):Promise<OfflineWrite>{
  const savedAt=new Date().toISOString();
- const database=await db();
+ const database=await db(scope);
  if(database){
   const writeId=newOpId();
   const tx=database.transaction(["snapshots","outbox"],"readwrite");
@@ -130,8 +134,8 @@ export async function persistOffline(
    snapshots.put(snapshot,"current");
    for(const item of append)outbox.put(item);
    await completed;
-   const ops=await queuedOperations(),count=queueCounts(ops);
-   const didMirror=mirror(state);
+   const ops=await queuedOperations(scope),count=queueCounts(ops);
+   const didMirror=mirror(state,scope);
    return {writeId,mode:"indexeddb",savedAt,pending:count.pending,conflicts:count.conflicts,
     warning:didMirror?null:"A cópia secundária em localStorage não pôde ser guardada. Os dados principais estão no IndexedDB."};
   }catch(error){
@@ -142,20 +146,20 @@ export async function persistOffline(
  }
  // Degradação graciosa: sem IndexedDB nunca declarar armazenamento transaccional.
  try{
-  if(options.reset)window.localStorage.setItem(OFFLINE_LOCAL_JOURNAL_KEY,"[]");
+  if(options.reset)window.localStorage.setItem(scopedOfflineKey(OFFLINE_LOCAL_JOURNAL_KEY,scope),"[]");
   else{
-   const previous=readLegacyOps();
-   window.localStorage.setItem(OFFLINE_LOCAL_JOURNAL_KEY,JSON.stringify([...previous,...append]));
+   const previous=readLegacyOps(scope);
+   window.localStorage.setItem(scopedOfflineKey(OFFLINE_LOCAL_JOURNAL_KEY,scope),JSON.stringify([...previous,...append]));
   }
-  if(!mirror(state))throw Error("Armazenamento local cheio ou bloqueado.");
-  const count=queueCounts(readLegacyOps());
+  if(!mirror(state,scope))throw Error("Armazenamento local cheio ou bloqueado.");
+  const count=queueCounts(readLegacyOps(scope));
   return {writeId:null,mode:"localStorage",savedAt,pending:count.pending,conflicts:count.conflicts,
    warning:"Modo de compatibilidade: não há transacções IndexedDB nem garantias contra conflitos de outras abas."};
  }catch{
   throw new Error("Não foi possível guardar a operação neste dispositivo. Exporte uma cópia imediatamente e liberte espaço.");
  }
 }
-export async function exportOfflineBackup(state:Store,clientId:string):Promise<string>{
- const pending=await queuedOperations();
+export async function exportOfflineBackup(state:Store,clientId:string,scope?:string):Promise<string>{
+ const pending=await queuedOperations(scope);
  return JSON.stringify(backupEnvelope(state,pending,clientId),null,2);
 }

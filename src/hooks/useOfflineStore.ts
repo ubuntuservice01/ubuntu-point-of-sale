@@ -1,6 +1,6 @@
 import {useEffect,useRef,useState,type Dispatch,type SetStateAction} from "react";
 import {initialStore,type Store} from "../lib/domain";
-import {changedOperations,startingOverview,type OfflineOverview} from "../lib/offline-model";
+import {changedOperations,startingOverview,scopedOfflineKey,OFFLINE_LEGACY_KEY,type OfflineOverview} from "../lib/offline-model";
 import {exportOfflineBackup,loadOffline,persistOffline} from "../lib/offline-db";
 import {registerOfflineShell} from "../lib/offline-sw";
 
@@ -18,7 +18,7 @@ function saveBackup(text:string){
  window.setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 /** Dados do POS: IndexedDB transaccional com diário pendente para futura API segura. */
-export function useOfflineStore():OfflineStoreController{
+export function useOfflineStore(scope?:string):OfflineStoreController{
  const [data,setData]=useState<Store>(initialStore);
  const [loaded,setLoaded]=useState(false);
  const [overview,setOverview]=useState<OfflineOverview>(startingOverview);
@@ -34,7 +34,7 @@ export function useOfflineStore():OfflineStoreController{
  useEffect(()=>{
   activeRef.current=true;
   let cancelled=false;
-  void loadOffline().then(boot=>{
+  void loadOffline(scope).then(boot=>{
    if(cancelled)return;
    idRef.current=boot.clientId;
    writeIdRef.current=boot.writeId;
@@ -64,13 +64,13 @@ export function useOfflineStore():OfflineStoreController{
  }),[]);
  useEffect(()=>{
   const onChange=(event:StorageEvent)=>{
-   if(event.key==="ubuntu-pos360-demo-v1"&&event.newValue){
+   if(event.key===scopedOfflineKey(OFFLINE_LEGACY_KEY,scope)&&event.newValue){
     setOverview(old=>({...old,error:"Outra aba do POS alterou os dados locais. Para evitar conflitos, guarde uma cópia de segurança e recarregue antes de continuar."}));
    }
   };
   window.addEventListener("storage",onChange);
   return()=>window.removeEventListener("storage",onChange);
- },[]);
+ },[scope]);
  useEffect(()=>{
   if(!loaded||!persistedRef.current||data===scheduledRef.current)return;
   scheduledRef.current=data;
@@ -80,7 +80,7 @@ export function useOfflineStore():OfflineStoreController{
    const before=persistedRef.current;
    if(!before)return;
    const append=clear?[]:changedOperations(before,data,idRef.current);
-   const result=await persistOffline(data,append,idRef.current,writeIdRef.current,clear?{reset:true}:{});
+   const result=await persistOffline(data,append,idRef.current,writeIdRef.current,clear?{reset:true}:{},scope);
    persistedRef.current=data;
    writeIdRef.current=result.writeId;
    if(activeRef.current)setOverview(prev=>({...prev,
@@ -97,7 +97,7 @@ export function useOfflineStore():OfflineStoreController{
  };
  const downloadBackup=async()=>{
   try{
-   const content=await exportOfflineBackup(data,idRef.current);
+   const content=await exportOfflineBackup(data,idRef.current,scope);
    saveBackup(content);
   }catch(error){
    setOverview(prev=>({...prev,error:error instanceof Error?error.message:"Não foi possível exportar o backup."}));

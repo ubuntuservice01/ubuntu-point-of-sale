@@ -5,6 +5,8 @@ export const OFFLINE_LEGACY_KEY="ubuntu-pos360-demo-v1";
 export const OFFLINE_LOCAL_META_KEY="ubuntu-pos360-offline-meta-v1";
 export const OFFLINE_LOCAL_JOURNAL_KEY="ubuntu-pos360-pending-ops-v1";
 export const OFFLINE_SCHEMA=1;
+/** Chaves diferentes por tenant apenas no browser; sem RLS. */
+export const scopedOfflineKey=(base:string,scope?:string)=>scope?base+"-tenant-"+encodeURIComponent(scope):base;
 export const JOURNALED_COLLECTIONS=[
  "operators","operatorApprovals","products","customers","sales","credits","suppliers","purchases","supplierPayments",
  "stockMovements","returns","expenses","cashSessions","cashMovements","pharmaLots",
@@ -27,12 +29,12 @@ export type OfflineOverview={
 export const startingOverview=():OfflineOverview=>({
  mode:"memory",savedAt:null,pending:0,conflicts:0,error:null,serviceWorker:"registering"
 });
-export function deviceId():string{
+export function deviceId(scope?:string):string{
  try{
-  const stored=window.localStorage.getItem(OFFLINE_LOCAL_META_KEY);
+  const stored=window.localStorage.getItem(scopedOfflineKey(OFFLINE_LOCAL_META_KEY,scope));
   if(stored&&/^[a-zA-Z0-9-]{8,80}$/.test(stored))return stored;
   const next=globalThis.crypto?.randomUUID?.()??("device-"+Date.now()+"-"+Math.random().toString(36).slice(2));
-  window.localStorage.setItem(OFFLINE_LOCAL_META_KEY,next);
+  window.localStorage.setItem(scopedOfflineKey(OFFLINE_LOCAL_META_KEY,scope),next);
   return next;
  }catch{return globalThis.crypto?.randomUUID?.()??"memory-"+Date.now()}
 }

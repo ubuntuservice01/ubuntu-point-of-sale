@@ -14,6 +14,9 @@ import {grossUnitDifference,validUnitPrice} from "../lib/product-pricing";
 import {useDialogFocus} from "../lib/useDialogFocus";
 import {NAV_GROUPS,navGroupFor,sectionLabel,type NavGroupId} from "../lib/ux";
 import {DashboardOverview} from "./DashboardOverview";
+import {BusinessWelcome,BusinessAccessBlocked} from "./BusinessWorkspace";
+import {ADMIN_KEY,initialAdminStore,safeAdminStore,type AdminStore} from "../lib/admin-demo";
+import {businessAllows,businessMenuGroups,BUSINESS_SECTION_LABELS,resolveBusinessWorkspace} from "../lib/business-workspace";
 import {MobileQuickNav,type QuickActionId} from "./MobileQuickNav";
 import {CameraBarcodeScanner,type CameraBarcodeScannerProps} from "./CameraBarcodeScanner";
 import {barcodeCollision,findProductByScan,normalizeBarcode,validBarcode} from "../lib/barcodes";
@@ -51,8 +54,22 @@ function DemoBadge(){return <span className="demo-pill"><span className="demo-do
 function Field({label,children}:{label:string;children:ReactNode}){return <label className="field"><span>{label}</span>{children}</label>;}
 function PaymentIcon({method}:{method:Payment}){const Icon=method==="dinheiro"?Banknote:method==="cartao"?CreditCard:method==="fiado"?HandCoins:Smartphone;return <Icon size={17}/>;}
 
-export function UbuntuApp(){
+export function UbuntuApp({tenantId}:{tenantId?:string}={}){
  const [section,setSection]=useState<Section>("dashboard");
+ const [adminStore,setAdminStore]=useState<AdminStore>(initialAdminStore);
+ const [merchantLoaded,setMerchantLoaded]=useState(!tenantId);
+ useEffect(()=>{
+  if(!tenantId)return;
+  const refresh=()=>{
+   let next=initialAdminStore();
+   try{const raw=window.localStorage.getItem(ADMIN_KEY);if(raw)next=safeAdminStore(JSON.parse(raw))}catch{/* demo */}
+   setAdminStore(next);setMerchantLoaded(true);
+  };
+  refresh();
+  window.addEventListener("storage",refresh);
+  return()=>window.removeEventListener("storage",refresh);
+ },[tenantId]);
+ const workspace=tenantId?resolveBusinessWorkspace(adminStore,tenantId):null;
  const [collapsed,setCollapsed]=useState(false);
  const [openGroups,setOpenGroups]=useState<Record<NavGroupId,boolean>>(()=>Object.fromEntries(NAV_GROUPS.map(g=>[g.id,true])) as Record<NavGroupId,boolean>);
  const [headerPanel,setHeaderPanel]=useState<"search"|"alerts"|"profile"|null>(null);
@@ -71,13 +88,13 @@ export function UbuntuApp(){
  const [mobilePosView,setMobilePosView]=useState<"products"|"cart">("products");
  const [quickCashMode,setQuickCashMode]=useState(false);
  const [scannerMode,setScannerMode]=useState<"sale"|"product"|null>(null);
- const {data,setData:setStoreData,loaded,overview,online,resetDemo,downloadBackup}=useOfflineStore();
+ const {data,setData:setStoreData,loaded,overview,online,resetDemo,downloadBackup}=useOfflineStore(tenantId);
  const [operatorReady,setOperatorReady]=useState(false);
  const [session,setSession]=useState<DemoSession|null>(()=>{
   // O gerente demonstrativo anterior mantém os menus durante a hidratação inicial.
   // Perfis guardados são restabelecidos após recuperar o Store.
   let stored:string|null=null;
-  try{stored=window.sessionStorage.getItem(DEMO_SESSION_KEY)}catch{/* indisponível */}
+  try{stored=window.sessionStorage.getItem(tenantId?DEMO_SESSION_KEY+"-"+tenantId:DEMO_SESSION_KEY)}catch{/* indisponível */}
   return initialDemoSession([{id:BOOTSTRAP_OPERATOR_ID,name:"Gerente da demonstração",
    role:"gerente",active:true,createdAt:"2026-01-01",updatedAt:"2026-01-01"}],stored);
  });
@@ -86,7 +103,10 @@ export function UbuntuApp(){
  const activeOperator=data.operators.find(o=>session?.operatorId===o.id&&o.active)??null;
  const can=(action:Parameters<typeof roleCan>[1])=>Boolean(activeOperator&&roleCan(activeOperator.role,action));
  const hasReturnGrant=Boolean(approvalGrant&&approvalGrant.expires>Date.now()&&section==="returns");
- const allowedSection=(target:Section)=>Boolean(activeOperator&&(roleCanSection(activeOperator.role,target)||(target==="returns"&&hasReturnGrant)));
+ const allowedSection=(target:Section)=>Boolean(activeOperator&&
+  (!tenantId||(workspace&&businessAllows(workspace,target)))&&
+  (roleCanSection(activeOperator.role,target)||(target==="returns"&&hasReturnGrant)||
+    (workspace?.speciality===target&&activeOperator.role==="caixa")));
  const setData:Dispatch<SetStateAction<StoreData>>=(value)=>{
   if(!activeOperator||!allowedSection(section))return;
   setStoreData(prev=>{
@@ -104,7 +124,7 @@ export function UbuntuApp(){
  useEffect(()=>{
   if(!loaded)return;
   let stored:string|null=null;
-  try{stored=window.sessionStorage.getItem(DEMO_SESSION_KEY)}catch{/* modo sem sessionStorage */}
+  try{stored=window.sessionStorage.getItem(tenantId?DEMO_SESSION_KEY+"-"+tenantId:DEMO_SESSION_KEY)}catch{/* modo sem sessionStorage */}
   const initial=initialDemoSession(data.operators,stored);
   setSession(initial);if(initial){const user=data.operators.find(o=>o.id===initial.operatorId);if(user)setSection(firstSection(user.role))}setOperatorReady(true);
  },[loaded]);
@@ -112,7 +132,7 @@ export function UbuntuApp(){
   if(!operatorReady||!session)return;
   if(!data.operators.some(o=>o.active&&o.id===session.operatorId)){
    setSession(null);
-   try{window.sessionStorage.setItem(DEMO_SESSION_KEY,"logout")}catch{/* sessão local indisponível */}
+   try{window.sessionStorage.setItem(tenantId?DEMO_SESSION_KEY+"-"+tenantId:DEMO_SESSION_KEY,"logout")}catch{/* sessão local indisponível */}
   }
  },[data.operators,operatorReady,session]);
  const loginOperator=async(operator:Operator,pin:string)=>{
@@ -123,14 +143,14 @@ export function UbuntuApp(){
   const next=sessionFor(operator);
   setSession(next);setSection(firstSection(operator.role));setApprovalGrant(null);setApprovalRequest(null);
   setModal(null);setSettlement(null);setCart([]);setCashEntry("");setCustomerId("");
-  try{window.sessionStorage.setItem(DEMO_SESSION_KEY,JSON.stringify(next))}catch{/* só memória */}
+  try{window.sessionStorage.setItem(tenantId?DEMO_SESSION_KEY+"-"+tenantId:DEMO_SESSION_KEY,JSON.stringify(next))}catch{/* só memória */}
   return true;
  };
  const switchOperator=()=>{
   setSession(null);setApprovalGrant(null);setApprovalRequest(null);setModal(null);
   setSettlement(null);setScannerMode(null);setCart([]);setCashEntry("");setCustomerId("");
   setMobileMenu(false);setHeaderPanel(null);setSection("pos");
-  try{window.sessionStorage.setItem(DEMO_SESSION_KEY,"logout")}catch{/* só memória */}
+  try{window.sessionStorage.setItem(tenantId?DEMO_SESSION_KEY+"-"+tenantId:DEMO_SESSION_KEY,"logout")}catch{/* só memória */}
  };
 
  useEffect(()=>{try{setQuickCashMode(window.localStorage.getItem("ubuntu-pos360-quick-mode")==="on")}catch{/* preferências indisponíveis */}},[]);
@@ -170,7 +190,7 @@ export function UbuntuApp(){
   action,description,...(activeOperator?{operatorId:activeOperator.id}:{})});
  const navigate=(next:Section,approved=false)=>{
   if(!activeOperator)return;
-  if(!approved&&!roleCanSection(activeOperator.role,next)){
+  if(!approved&&!allowedSection(next)){
    if(next==="returns"&&activeOperator.role==="caixa"){
     setApprovalRequest({scope:"returns",description:"Solicitar autorização temporária para registar uma devolução.",onApproved:approver=>{
      setApprovalGrant({section:"returns",approverId:approver.id,expires:Date.now()+120_000});
@@ -365,8 +385,10 @@ export function UbuntuApp(){
  }
  function openCompany(co?:Company){setEditingCompany(co??null);setCompanyForm(co?{name:co.name,sector:co.sector,status:co.status}:{name:"",sector:"Loja",status:"teste"});setModal("company");}
  function toggleCompanyModule(id:string,module:string){setData(old=>({...old,companies:old.companies.map(c=>c.id===id?{...c,modules:c.modules.includes(module)?c.modules.filter(m=>m!==module):[...c.modules,module]}:c),audits:[audit("Módulos ajustados","Alteração de demonstração · "+module),...old.audits]}));}
- const searchResults=globalSearch.trim()?SECTIONS.filter(item=>allowedSection(item.id)&&item.label.toLocaleLowerCase("pt").includes(globalSearch.trim().toLocaleLowerCase("pt"))).slice(0,7):[];
- const activeGroup=navGroupFor(section);
+ const searchResults=globalSearch.trim()?SECTIONS.filter(item=>allowedSection(item.id)&&
+  (workspace?BUSINESS_SECTION_LABELS[item.id]??item.label:item.label).toLocaleLowerCase("pt").includes(globalSearch.trim().toLocaleLowerCase("pt"))).slice(0,7):[];
+ const activeGroup=workspace?businessMenuGroups(workspace).find(group=>group.sections.includes(section)):navGroupFor(section);
+ const scopedSectionLabel=(id:Section)=>workspace?BUSINESS_SECTION_LABELS[id]??sectionLabel(id):sectionLabel(id);
  const activeAlerts=useMemo(()=>operationalAlerts(data,clock),[data,clock]);
  const alertCounts=useMemo(()=>alertSummary(activeAlerts,data.readAlertIds),[activeAlerts,data.readAlertIds]);
  const markAsRead=(id:string)=>setData(old=>({...old,readAlertIds:markAlertRead(old.readAlertIds,id)}));
@@ -389,15 +411,19 @@ export function UbuntuApp(){
   if(alert.kind==="orders")setAlertReference(alert.reference);
  };
  const sidebarAlerts=alertCounts.unread;
- const menuSections=NAV_GROUPS.map(group=>({...group,items:group.sections
-  .filter(id=>allowedSection(id)).map(id=>({id,label:sectionLabel(id),Icon:ICONS[id]}))}))
+ const menuBase=workspace?businessMenuGroups(workspace):NAV_GROUPS;
+ const menuSections=menuBase.map(group=>({...group,items:group.sections
+  .filter(id=>allowedSection(id)).map(id=>({id,label:scopedSectionLabel(id),Icon:ICONS[id]}))}))
   .filter(group=>group.items.length>0);
  const operatorSectionAllowed=allowedSection(section);
+ if(tenantId&&!merchantLoaded)return <div className="bw-route-loading" role="status">A preparar o espaço de trabalho da empresa…</div>;
+ if(tenantId&&merchantLoaded&&!workspace)return <BusinessAccessBlocked unknown/>;
+ if(tenantId&&workspace&&!workspace.licensed)return <BusinessAccessBlocked workspace={workspace}/>;
  if(loaded&&operatorReady&&!activeOperator)return <OperatorLogin operators={data.operators} onLogin={loginOperator}/>;
  return <div className={"ubuntu-shell "+(section==="pos"&&quickCashMode?"qc-mode-on":"")} aria-busy={!loaded||!operatorReady}>
   {(!loaded||!operatorReady)&&<div className="offline-boot-overlay" role="status"><span>A recuperar os dados do POS neste dispositivo…</span></div>}
   <aside className={"sidebar "+(collapsed?"is-collapsed ":"")+(mobileMenu?"mobile-open":"")}>
-   <div className="brand"><span className="brand-mark"><Store size={22} strokeWidth={2.3}/></span>{!collapsed&&<span className="brand-type"><strong>Ubuntu <b>POS 360</b></strong><small>by Ubuntu Service</small></span>}<button className="mobile-close" aria-label="Fechar menu" onClick={()=>setMobileMenu(false)}><X size={20}/></button></div>
+   <div className="brand"><span className="brand-mark"><Store size={22} strokeWidth={2.3}/></span>{!collapsed&&<span className="brand-type"><strong>{workspace?.tenant.name??<>Ubuntu <b>POS 360</b></>}</strong><small>{workspace?.title??"by Ubuntu Service"}</small></span>}<button className="mobile-close" aria-label="Fechar menu" onClick={()=>setMobileMenu(false)}><X size={20}/></button></div>
    <nav aria-label="Navegação principal">
     {menuSections.map(group=><div className="ux-nav-group" key={group.id} data-group={group.id}>
       {!collapsed?<button type="button" className="ux-nav-group-toggle" aria-expanded={openGroups[group.id]} onClick={()=>setOpenGroups(prev=>({...prev,[group.id]:!prev[group.id]}))}>
@@ -410,14 +436,14 @@ export function UbuntuApp(){
   </aside>
   {mobileMenu&&<button className="mobile-screen" aria-label="Fechar menu" onClick={()=>setMobileMenu(false)}/>}
   <div className="workspace"><header className="topbar ux-topbar">
-   <div className="top-left"><IconButton label="Abrir menu" className="mobile-menu" onClick={()=>{setCollapsed(false);setMobileMenu(true)}}><Menu size={21}/></IconButton><span className="breadcrumbs">Ubuntu POS 360 <ChevronRight size={15}/><span className="ux-breadcrumb-group">{activeGroup?.label}</span><ChevronRight size={15}/><b>{sectionLabel(section)}</b></span></div>
+   <div className="top-left"><IconButton label="Abrir menu" className="mobile-menu" onClick={()=>{setCollapsed(false);setMobileMenu(true)}}><Menu size={21}/></IconButton><span className="breadcrumbs">{workspace?.tenant.name??"Ubuntu POS 360"} <ChevronRight size={15}/><span className="ux-breadcrumb-group">{activeGroup?.label}</span><ChevronRight size={15}/><b>{scopedSectionLabel(section)}</b></span></div>
    <div className="top-right ux-top-right">
-    <div className={"ux-top-search "+(headerPanel==="search"?"ux-search-open":"")}><button type="button" className="ux-mobile-search-trigger" aria-label="Abrir pesquisa de secções" onClick={()=>{setHeaderPanel("search");globalSearchRef.current?.focus()}}><Search size={17}/></button><Search size={17}/><input ref={globalSearchRef} type="search" aria-label="Pesquisar secções" placeholder="Ir para uma secção…" value={globalSearch} onFocus={()=>setHeaderPanel("search")} onChange={e=>{setGlobalSearch(e.target.value);setHeaderPanel("search")}} onKeyDown={e=>{if(e.key==="Escape"){setHeaderPanel(null);setGlobalSearch("")}if(e.key==="Enter"&&searchResults.length){e.preventDefault();navigate(searchResults[0]!.id)}}}/>
+    <div className={"ux-top-search "+(headerPanel==="search"?"ux-search-open":"")}><button type="button" className="ux-mobile-search-trigger" aria-label="Abrir pesquisa de secções" onClick={()=>{setHeaderPanel("search");globalSearchRef.current?.focus()}}><Search size={17}/></button><Search size={17}/><input ref={globalSearchRef} type="search" aria-label="Pesquisar secções" placeholder={workspace?"Pesquisar serviços deste negócio…":"Ir para uma secção…"} value={globalSearch} onFocus={()=>setHeaderPanel("search")} onChange={e=>{setGlobalSearch(e.target.value);setHeaderPanel("search")}} onKeyDown={e=>{if(e.key==="Escape"){setHeaderPanel(null);setGlobalSearch("")}if(e.key==="Enter"&&searchResults.length){e.preventDefault();navigate(searchResults[0]!.id)}}}/>
      {headerPanel==="search"&&globalSearch.trim()&&<div className="ux-search-popover" role="listbox" aria-label="Resultados da pesquisa">
-      {searchResults.length?searchResults.map(result=><button key={result.id} role="option" aria-selected={section===result.id} onClick={()=>navigate(result.id)}><span>{result.label}</span><small>{navGroupFor(result.id)?.label}</small></button>):<p>Não foi encontrada nenhuma secção.</p>}
+      {searchResults.length?searchResults.map(result=><button key={result.id} role="option" aria-selected={section===result.id} onClick={()=>navigate(result.id)}><span>{scopedSectionLabel(result.id)}</span><small>{workspace?businessMenuGroups(workspace).find(g=>g.sections.includes(result.id))?.label:navGroupFor(result.id)?.label}</small></button>):<p>Não foi encontrada nenhuma secção.</p>}
      </div>}
     </div>
-    <Link to="/catalogo" className="ux-header-link" title="Abrir catálogo de demonstração"><Globe2 size={17}/><span>Catálogo</span></Link>
+    {!workspace&&<Link to="/catalogo" className="ux-header-link" title="Abrir catálogo de demonstração"><Globe2 size={17}/><span>Catálogo</span></Link>}
     <div className="ux-header-popovers">
      <button type="button" className="ux-header-icon" aria-label={"Alertas ("+sidebarAlerts+" por ler)"} aria-expanded={headerPanel==="alerts"} onClick={()=>setHeaderPanel(headerPanel==="alerts"?null:"alerts")}><Bell size={19}/>{sidebarAlerts>0&&<small>{sidebarAlerts>99?"99+":sidebarAlerts}</small>}</button>
      {headerPanel==="alerts"&&<AlertBellPopover alerts={activeAlerts} readIds={data.readAlertIds} onOpen={openAlert} onAll={()=>navigate("alertas")}/>}
@@ -455,7 +481,8 @@ export function UbuntuApp(){
    {section==="alertas"&&<AlertCenter alerts={activeAlerts} readIds={data.readAlertIds} settings={data.alertSettings}
     onOpen={openAlert} onRead={markAsRead} onUnread={markAsUnread} onReadAll={markAllAsRead}
     onSaveSettings={settings=>setData(old=>({...old,alertSettings:settings,readAlertIds:[]}))}/>}
-   {section==="dashboard"&&<DashboardOverview data={data} go={navigate} addProduct={()=>{navigate("products");openProduct()}} addCustomer={()=>{navigate("customers");setModal("customer")}} openOverdue={()=>{navigate("customers");setDebtFilter("vencidas")}}/>}
+   {section==="dashboard"&&(workspace?<BusinessWelcome workspace={workspace} data={data} allowed={allowedSection} onNavigate={navigate}/>:
+ <DashboardOverview data={data} go={navigate} addProduct={()=>{navigate("products");openProduct()}} addCustomer={()=>{navigate("customers");setModal("customer")}} openOverdue={()=>{navigate("customers");setDebtFilter("vencidas")}}/>)}
    {section==="pos"&&<><PageHeading title={quickCashMode?"Caixa rápido":"Ponto de venda"} subtitle={quickCashMode?"Interface de balcão com teclas grandes e poucos passos.":"Escolha os produtos e registe uma venda de demonstração."} kicker="VENDAS"
  right={<div className="qc-mode-controls">
   <button type="button" className={"qc-toggle "+(quickCashMode?"is-on":"")} aria-pressed={quickCashMode}

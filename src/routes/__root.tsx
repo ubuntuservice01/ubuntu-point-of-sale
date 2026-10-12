@@ -18,6 +18,7 @@ import alertsCss from "../styles/alerts.css?url";
 import offlineCss from "../styles/offline.css?url";
 import quickCashCss from "../styles/quick-cash.css?url";
 import operatorsCss from "../styles/operators.css?url";
+import businessCss from "../styles/business-workspace.css?url";
 
 export const Route = createRootRouteWithContext<{queryClient:QueryClient}>()({
  head:()=>({
@@ -30,7 +31,7 @@ export const Route = createRootRouteWithContext<{queryClient:QueryClient}>()({
    {property:"og:title",content:"Ubuntu POS 360"},
    {property:"og:description",content:"Criando pontes entre o físico e o digital."}
   ],
-  links:[{rel:"stylesheet",href:appCss},{rel:"stylesheet",href:adminCss},{rel:"stylesheet",href:companyCss},{rel:"stylesheet",href:commerceCss},{rel:"stylesheet",href:sectorCss},{rel:"stylesheet",href:expansionCss},{rel:"stylesheet",href:digitalCss},{rel:"stylesheet",href:publicCss},{rel:"stylesheet",href:uxCss},{rel:"stylesheet",href:barcodeCss},{rel:"stylesheet",href:mobilePosCss},{rel:"stylesheet",href:profitCss},{rel:"stylesheet",href:thermalCss},{rel:"stylesheet",href:alertsCss},{rel:"stylesheet",href:offlineCss},{rel:"stylesheet",href:quickCashCss},{rel:"stylesheet",href:operatorsCss},{rel:"manifest",href:"/manifest.webmanifest"},{rel:"icon",href:"/favicon.svg",type:"image/svg+xml"}]
+  links:[{rel:"stylesheet",href:appCss},{rel:"stylesheet",href:adminCss},{rel:"stylesheet",href:companyCss},{rel:"stylesheet",href:commerceCss},{rel:"stylesheet",href:sectorCss},{rel:"stylesheet",href:expansionCss},{rel:"stylesheet",href:digitalCss},{rel:"stylesheet",href:publicCss},{rel:"stylesheet",href:uxCss},{rel:"stylesheet",href:barcodeCss},{rel:"stylesheet",href:mobilePosCss},{rel:"stylesheet",href:profitCss},{rel:"stylesheet",href:thermalCss},{rel:"stylesheet",href:alertsCss},{rel:"stylesheet",href:offlineCss},{rel:"stylesheet",href:quickCashCss},{rel:"stylesheet",href:operatorsCss},{rel:"stylesheet",href:businessCss},{rel:"manifest",href:"/manifest.webmanifest"},{rel:"icon",href:"/favicon.svg",type:"image/svg+xml"}]
  }),
  shellComponent:Shell,
  component:Root

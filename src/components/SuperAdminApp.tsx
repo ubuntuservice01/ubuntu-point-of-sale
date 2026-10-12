@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import {useDialogFocus} from "../lib/useDialogFocus";
 import {money,keyId} from "../lib/domain";
+import {mandatorySectorAddon,SECTOR_MODULE_IDS} from "../lib/business-workspace";
 import {
  ADMIN_KEY,ADMIN_SCREENS,ADMIN_SECTORS,MODULE_CATALOG,
  initialAdminStore,safeAdminStore,dateISO,addDays,displayDate,displayTime,
@@ -129,7 +130,7 @@ export function SuperAdminApp(){
   const data:AdminTenant={...companyInput,name,slug,responsible:companyInput.responsible.trim(),email:companyInput.email.trim(),
    city:companyInput.city.trim(),phone:companyInput.phone.trim(),notes:companyInput.notes.trim(),
    id:current?.id??keyId(),createdAt:current?.createdAt??today,
-   addons:current?.addons??[]
+   addons:[...new Set([...(current?.addons??[]).filter(id=>!SECTOR_MODULE_IDS.includes(id as typeof SECTOR_MODULE_IDS[number])),...mandatorySectorAddon(companyInput.sector)])]
   };
   setStore(prev=>({...prev,tenants:current?prev.tenants.map(t=>t.id===current.id?data:t):[data,...prev.tenants],
    events:[log(current?"Empresa actualizada":"Empresa criada",name,
@@ -152,6 +153,9 @@ export function SuperAdminApp(){
   setDialog(null);notify("Prazo da licença alterado na demonstração.");
  }
  function toggleAddon(t:AdminTenant,id:string){
+  if(SECTOR_MODULE_IDS.includes(id as typeof SECTOR_MODULE_IDS[number])){
+   notify("O módulo sectorial é definido pelo tipo de negócio. Altere o sector em Editar empresa.","error");return;
+  }
   const plan=planFor(t);if(plan?.includedModules.includes(id))return;
   const enabled=t.addons.includes(id);
   setStore(prev=>({...prev,tenants:prev.tenants.map(item=>item.id===t.id?{...item,addons:enabled?item.addons.filter(x=>x!==id):[...item.addons,id]}:item),
@@ -346,8 +350,9 @@ export function SuperAdminApp(){
   {dialog==="tenant"&&detail&&<DialogBox title="Detalhes da empresa" wide onClose={()=>setDialog(null)}>
     <div className="sa-tenant-head"><div className="sa-tenant-logo">{detail.name.charAt(0)}</div><div><h3>{detail.name}</h3><p>{detail.sector} · {detail.city}</p></div><StateBadge tenant={detail}/></div>
     <div className="sa-detail-tabs" role="tablist" aria-label="Detalhes da empresa">{(["resumo","modulos","licenca"] as const).map(tab=><button role="tab" key={tab} aria-selected={detailsTab===tab} className={detailsTab===tab?"active":""} onClick={()=>setDetailsTab(tab)}>{tab==="resumo"?"Resumo":tab==="modulos"?"Módulos":"Licença"}</button>)}</div>
-    {detailsTab==="resumo"&&<div><dl className="sa-details-list"><div><dt>Responsável</dt><dd>{detail.responsible}</dd></div><div><dt>E-mail</dt><dd>{detail.email}</dd></div><div><dt>Plano</dt><dd>{planFor(detail)?.name??"—"}</dd></div><div><dt>Filiais</dt><dd>{detail.branchCount}</dd></div><div><dt>Identificador</dt><dd><code>{detail.slug}.pos.exemplo.invalid</code></dd></div><div><dt>Observações</dt><dd>{detail.notes||"—"}</dd></div></dl><div className="sa-modal-actions"><Link className="sa-primary" to="/empresa" search={{tenant:detail.id}} onClick={()=>setDialog(null)}><Building2 size={16}/> Painel da empresa</Link><button className="sa-outline" onClick={()=>{setDialog(null);openEdit(detail)}}><Edit3 size={16}/> Editar dados</button></div></div>}
-    {detailsTab==="modulos"&&<div><p className="sa-tab-hint">Módulos do plano são incluídos automaticamente. Pode acrescentar ou retirar recursos adicionais nesta demonstração.</p><div className="sa-company-module-list">{MODULE_CATALOG.map(m=>{const inherited=planFor(detail)?.includedModules.includes(m.id)??false;const checked=assignedModules(detail,planFor(detail)).includes(m.id);return <label key={m.id} className="sa-module-toggle"><input type="checkbox" checked={checked} disabled={inherited} onChange={()=>toggleAddon(detail,m.id)}/><span><b>{m.label}</b><small>{inherited?"Incluído no plano":m.addonPrice===0?"Adicional sem custo demonstrativo":money(m.addonPrice)+"/mês (valor ilustrativo)"}</small></span></label>})}</div><div className="sa-module-total">Valor mensal estimado: <strong>{money(tenantMonthlyPrice(detail,planFor(detail)))}</strong></div></div>}
+    {detailsTab==="resumo"&&<div><dl className="sa-details-list"><div><dt>Responsável</dt><dd>{detail.responsible}</dd></div><div><dt>E-mail</dt><dd>{detail.email}</dd></div><div><dt>Plano</dt><dd>{planFor(detail)?.name??"—"}</dd></div><div><dt>Filiais</dt><dd>{detail.branchCount}</dd></div><div><dt>Identificador</dt><dd><code>{detail.slug}.pos.exemplo.invalid</code></dd></div><div><dt>Observações</dt><dd>{detail.notes||"—"}</dd></div></dl><div className="sa-modal-actions"><Link className="sa-primary" to="/empresa" search={{tenant:detail.id}} onClick={()=>setDialog(null)}><Building2 size={16}/> Painel da empresa</Link>
+ <Link className="sa-outline" to="/" search={{tenant:detail.id}} onClick={()=>setDialog(null)}><Store size={16}/> Abrir sistema do comerciante</Link><button className="sa-outline" onClick={()=>{setDialog(null);openEdit(detail)}}><Edit3 size={16}/> Editar dados</button></div></div>}
+    {detailsTab==="modulos"&&<div><p className="sa-tab-hint">Módulos do plano são incluídos automaticamente. Pode acrescentar ou retirar recursos adicionais nesta demonstração.</p><div className="sa-company-module-list">{MODULE_CATALOG.map(m=>{const inherited=planFor(detail)?.includedModules.includes(m.id)??false;const checked=assignedModules(detail,planFor(detail)).includes(m.id);return <label key={m.id} className="sa-module-toggle"><input type="checkbox" checked={checked} disabled={inherited||SECTOR_MODULE_IDS.includes(m.id as typeof SECTOR_MODULE_IDS[number])} onChange={()=>toggleAddon(detail,m.id)}/><span><b>{m.label}</b><small>{inherited?"Incluído no plano":m.addonPrice===0?"Adicional sem custo demonstrativo":money(m.addonPrice)+"/mês (valor ilustrativo)"}</small></span></label>})}</div><div className="sa-module-total">Valor mensal estimado: <strong>{money(tenantMonthlyPrice(detail,planFor(detail)))}</strong></div></div>}
     {detailsTab==="licenca"&&<div><dl className="sa-details-list"><div><dt>Estado</dt><dd><StateBadge tenant={detail}/></dd></div><div><dt>Registo</dt><dd>{displayDate(detail.createdAt)}</dd></div><div><dt>Validade</dt><dd>{displayDate(detail.expiresAt)}</dd></div><div><dt>Dias até ao fim</dt><dd>{remainingDays(detail.expiresAt,today)}</dd></div></dl><div className="sa-modal-actions"><button className="sa-outline" onClick={()=>{setDialog(null);openRenew(detail)}}><CalendarDays size={16}/> Prolongar prazo</button>{detail.status==="suspensa"?<button className="sa-primary" onClick={()=>changeStatus(detail,"activa")}><PlayCircle size={16}/> Reactivar simulação</button>:<button className="sa-danger-button" onClick={()=>changeStatus(detail,"suspensa")}><PauseCircle size={16}/> Suspender simulação</button>}{detail.status==="teste"&&<button className="sa-primary" onClick={()=>changeStatus(detail,"activa")}>Concluir teste</button>}</div></div>}
   </DialogBox>}
   {dialog==="confirm-reset"&&<DialogBox title="Repor dados da demonstração?" onClose={()=>setDialog(null)}>
