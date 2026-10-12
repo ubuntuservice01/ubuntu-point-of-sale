@@ -105,7 +105,7 @@ export const BUSINESS_SECTION_LABELS:Partial<Record<Section,string>>={
 export function emptyBusinessStore():Store{
  const data=(requireInitialStore)();
  for(const key of EMPTY_COLLECTIONS)(data[key] as unknown[]).splice(0);
- data.companies=[];data.modules=[];data.audits=[];
+ data.companies=[];data.audits=[];
  data.catalogSettings={...data.catalogSettings,enabled:false};
  return data;
 }

@@ -54,7 +54,7 @@ function DemoBadge(){return <span className="demo-pill"><span className="demo-do
 function Field({label,children}:{label:string;children:ReactNode}){return <label className="field"><span>{label}</span>{children}</label>;}
 function PaymentIcon({method}:{method:Payment}){const Icon=method==="dinheiro"?Banknote:method==="cartao"?CreditCard:method==="fiado"?HandCoins:Smartphone;return <Icon size={17}/>;}
 
-export function UbuntuApp({tenantId}:{tenantId?:string}={}){
+export function UbuntuApp({tenantId}:{tenantId?:string|undefined}={}){
  const [section,setSection]=useState<Section>("dashboard");
  const [adminStore,setAdminStore]=useState<AdminStore>(initialAdminStore);
  const [merchantLoaded,setMerchantLoaded]=useState(!tenantId);

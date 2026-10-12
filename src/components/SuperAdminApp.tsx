@@ -190,7 +190,7 @@ export function SuperAdminApp(){
    <div className="sa-sidebar-footer">
     {!sidebarSmall&&<div className="sa-help"><ShieldCheck size={19}/><div><strong>Painel de demonstração</strong><span>Sem autenticação real</span></div></div>}
     <button className="sa-sidebar-collapse" onClick={()=>setSidebarSmall(!sidebarSmall)}><Menu size={18}/>{!sidebarSmall&&"Recolher menu"}</button>
-    <Link className="sa-back-link" to="/"><ArrowLeft size={17}/>{!sidebarSmall&&"Voltar à loja"}</Link>
+    <Link className="sa-back-link" to="/" search={{tenant:undefined}}><ArrowLeft size={17}/>{!sidebarSmall&&"Voltar à loja"}</Link>
    </div>
   </aside>
   <div className="sa-workspace">
