@@ -5,7 +5,7 @@ import {clearCompanyTokens,companyIdentity,companyTokens,loginCompany,logoutComp
 import {CompanyLive} from "./CompanyLive";
 import "../styles/super-admin-login.css";
 type Phase="loading"|"login"|"new-password"|"ready";
-export function CompanyAuthGate({tenantId}:{tenantId?:string}){
+export function CompanyAuthGate({tenantId}:{tenantId?:string|undefined}){
  const [phase,setPhase]=useState<Phase>("loading");
  const [tokens,setTokens]=useState<CompanyTokens|null>(null);
  const [members,setMembers]=useState<CompanyMember[]>([]);
