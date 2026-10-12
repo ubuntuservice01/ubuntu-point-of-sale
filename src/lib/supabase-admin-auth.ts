@@ -7,8 +7,9 @@ export type AdminIdentity={id:string;email:string};
 export type LoginResult={identity:AdminIdentity;tokens:Tokens};
 const env=import.meta.env;
 export function supabaseAdminConfig(){
- const url=(env['VITE_SUPABASE_URL']||"").replace(/\/$/,"");
- const key=env['VITE_SUPABASE_PUBLISHABLE_KEY']||env['VITE_SUPABASE_ANON_KEY']||"";
+ const url=(env['VITE_SUPABASE_URL']||"https://ahxzcfelywmsegozqomc.supabase.co").replace(/\/$/,"");
+ // Publishable client key; no service_role in the browser.
+ const key=env['VITE_SUPABASE_PUBLISHABLE_KEY']||env['VITE_SUPABASE_ANON_KEY']||"sb_publishable_baJoc64Y26fk7QczYi-sfg_kAwz8h5V";
  return url.startsWith("https://")&&Boolean(key)?{url,key}:null;
 }
 function getConfig(){
