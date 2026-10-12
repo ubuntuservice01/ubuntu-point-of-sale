@@ -36,7 +36,7 @@ Deno.serve(async req=>{
  if(!branch)return respond({error:"Seleccione uma filial activa."},422);
  const app=Deno.env.get("POS_APP_URL");
  if(!app||!/^https:\/\//.test(app))return respond({error:"Configure POS_APP_URL com o domínio HTTPS da aplicação antes de enviar convites."},503);
- const redirectTo=new URL("/empresa",app).toString();
+ const redirectTo=new URL("/login",app).toString();
  const {data:invited,error:inviteError}=await db.auth.admin.inviteUserByEmail(email,{redirectTo,data:{display_name}});
  if(inviteError||!invited.user)return respond({error:"Não foi possível enviar o convite. Confirme o endereço e o SMTP.",details:inviteError?.message},409);
  const {data:member,error:saveError}=await db.from("tenant_memberships").insert({tenant_id,user_id:invited.user.id,display_name,email,role,active:true}).select("id").single();
