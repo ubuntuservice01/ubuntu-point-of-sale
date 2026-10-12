@@ -40,7 +40,7 @@ export function destinationFor(identity:AppIdentity):Destination|null{
  if(identity.isPlatformAdmin)return {pathname:"/super-admin"};
  const roles=["company_admin","manager","supervisor","cashier","stock"] as const;
  for(const role of roles){
-  const member=identity.memberships.find(x=>x.active&&x.role===role);
+  const member=identity.memberships.find(x=>x.active&&x.user_id===identity.id&&x.role===role);
   if(member)return {pathname:role==="company_admin"?"/empresa":role==="stock"?"/stock":"/caixa",tenantId:member.tenant_id};
  }
  return null;
@@ -52,7 +52,7 @@ export function memberFor(identity:AppIdentity,audience:AppAudience,tenantId?:st
   cashier:["company_admin","manager","supervisor","cashier"],
   stock:["company_admin","manager","supervisor","stock"]
  };
- return identity.memberships.find(m=>m.active&&roles[audience].includes(m.role as AppRole)&&(!tenantId||tenantId===m.tenant_id))??null;
+ return identity.memberships.find(m=>m.active&&m.user_id===identity.id&&roles[audience].includes(m.role as AppRole)&&(!tenantId||tenantId===m.tenant_id))??null;
 }
 export function destinationUrl(destination:Destination):string{
  const query=new URLSearchParams();
