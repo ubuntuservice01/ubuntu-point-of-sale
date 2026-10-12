@@ -1,3 +1,4 @@
+import "../styles/ubuntu-live.css";
 import {useCallback,useEffect,useMemo,useState,type FormEvent} from "react";
 import {supabaseAdminConfig} from "../lib/supabase-admin-auth";
 type Sector="farmacia"|"talho"|"restaurante"|"bar"|"padaria"|"grossista"|"loja";
@@ -48,7 +49,7 @@ export function SuperAdminLive({token}:{token:string}){
   }catch(err){setError(err instanceof Error?err.message:"Não foi possível criar a empresa.");}
   finally{setBusy(false);}
  };
- return <section style={{padding:24,maxWidth:1240,margin:"auto",color:"#163342"}}>
+ return <section className="ubuntu-live" style={{padding:24,maxWidth:1240,margin:"auto",color:"#163342"}}>
   <header style={{display:"flex",justifyContent:"space-between",gap:16,flexWrap:"wrap",alignItems:"center"}}>
    <div><small>UBUNTU SERVICE · GESTÃO REAL</small><h1>Empresas por sector</h1><p>Registos e licenças guardados no Supabase.</p></div>
    <button type="button" onClick={()=>start(sector==="todos"?"talho":sector)}>+ Criar empresa</button>
