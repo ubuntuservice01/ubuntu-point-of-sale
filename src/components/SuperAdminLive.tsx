@@ -9,9 +9,14 @@ const empty=(sector:Sector)=>({name:"",slug:"",sector,city:"",province:"",nuit:"
 const slugify=(value:string)=>value.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,80);
 async function api<T>(token:string,path:string,options?:RequestInit):Promise<T>{
  const cfg=supabaseAdminConfig();if(!cfg)throw new Error("Configuração do Supabase em falta.");
- const response=await fetch(cfg.url+path,{...options,headers:{"apikey":cfg.key,"Authorization":"Bearer "+token,"Content-Type":"application/json",...options?.headers}});
+ let response:Response;
+ try{
+  response=await fetch(cfg.url+path,{...options,headers:{"apikey":cfg.key,"Authorization":"Bearer "+token,"Content-Type":"application/json",...options?.headers}});
+ }catch{
+  throw new Error("Não foi possível concluir a comunicação com o Supabase. Confirme a ligação à Internet, desactive temporariamente bloqueadores para esta aplicação e volte a tentar.");
+ }
  const json=await response.json().catch(()=>({}));
- if(!response.ok)throw new Error(json.error||json.message||"Erro na comunicação com o Supabase.");
+ if(!response.ok)throw new Error(json.error||json.message||"O servidor não conseguiu processar o pedido.");
  return json as T;
 }
 export function SuperAdminLive({token}:{token:string}){
@@ -23,16 +28,22 @@ export function SuperAdminLive({token}:{token:string}){
  const [creating,setCreating]=useState(false);
  const [busy,setBusy]=useState(false);
  const [loading,setLoading]=useState(true);
+ const [loaded,setLoaded]=useState(false);
  const [error,setError]=useState("");
  const [success,setSuccess]=useState("");
  const refresh=useCallback(async()=>{
-  setLoading(true);
+  setLoading(true);setError("");
   try{
-   const [businesses,available]=await Promise.all([
-    api<Tenant[]>(token,"/rest/v1/tenants?select=id,name,slug,sector,city,status,license_expires_at&order=name.asc"),
-    api<Plan[]>(token,"/rest/v1/plans?select=code,name&enabled=eq.true")
-   ]);setCompanies(businesses);setPlans(available);
-  }catch(e){setError(e instanceof Error?e.message:"Falha ao carregar empresas.");}
+   // Endpoint único com CORS explícito. O servidor verifica o perfil do Super Admin
+   // antes de consultar os dados; evita que a interface confunda falhas de rede com lista vazia.
+   const response=await api<{companies:Tenant[];plans:Plan[]}>(
+    token,"/functions/v1/admin-dashboard",{method:"POST",body:JSON.stringify({})}
+   );
+   if(!Array.isArray(response.companies)||!Array.isArray(response.plans)){
+    throw new Error("O servidor devolveu dados incompletos. Tente actualizar.");
+   }
+   setCompanies(response.companies);setPlans(response.plans);setLoaded(true);
+  }catch(e){setError(e instanceof Error?e.message:"Não foi possível carregar as empresas.");}
   finally{setLoading(false);}
  },[token]);
  useEffect(()=>{void refresh()},[refresh]);
@@ -52,17 +63,20 @@ export function SuperAdminLive({token}:{token:string}){
  return <section className="ubuntu-live" style={{padding:24,maxWidth:1240,margin:"auto",color:"#163342"}}>
   <header style={{display:"flex",justifyContent:"space-between",gap:16,flexWrap:"wrap",alignItems:"center"}}>
    <div><small>UBUNTU SERVICE · GESTÃO REAL</small><h1>Empresas por sector</h1><p>Registos e licenças guardados no Supabase.</p></div>
-   <button type="button" onClick={()=>start(sector==="todos"?"talho":sector)}>+ Criar empresa</button>
+   <button type="button" onClick={()=>start(sector==="todos"?"talho":sector)} disabled={!loaded||plans.length===0||loading}>+ Criar empresa</button>
   </header>
   <div role="note" style={{padding:12,background:"#fff4cf",borderRadius:12,margin:"16px 0"}}>A criação de empresas e os convites são reais. O POS dos comerciantes continua em integração e ainda não deve receber vendas reais.</div>
   {success&&<p role="status" style={{color:"#116d49"}}>{success}</p>}
-  {error&&<p role="alert" style={{color:"#b52b2b"}}>{error}</p>}
+  {error&&<div role="alert" style={{display:"flex",alignItems:"center",flexWrap:"wrap",gap:12,margin:"13px 0",color:"#a52b2b",background:"#fff3f0",padding:13,borderRadius:10}}>
+   <span>{error}</span><button type="button" onClick={()=>void refresh()} disabled={loading}>Tentar novamente</button>
+  </div>}
   <nav aria-label="Sectores" style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:14}}>
    <button aria-pressed={sector==="todos"} onClick={()=>setSector("todos")}>Todas ({companies.length})</button>
    {groups.map(g=><button key={g.id} aria-pressed={sector===g.id} onClick={()=>setSector(g.id)}>{g.label} ({companies.filter(c=>c.sector===g.id).length})</button>)}
   </nav>
   <label>Pesquisar empresas <input value={filter} onChange={e=>setFilter(e.target.value)} placeholder="Nome ou localidade"/></label>
-  {loading?<p>A carregar empresas...</p>:selected.length===0?<p style={{padding:28,background:"white",borderRadius:12}}>Ainda não há empresas nesta categoria. Clique em «Criar empresa» para começar.</p>:
+  {loading?<p role="status">A carregar empresas do Supabase...</p>:!loaded?
+   <p role="status" style={{padding:28,background:"#fff5e9",borderRadius:12}}>A lista ainda não pôde ser carregada. Clique em «Tentar novamente».</p>:selected.length===0?<p style={{padding:28,background:"white",borderRadius:12}}>Ainda não há empresas nesta categoria. Clique em «Criar empresa» para começar.</p>:
    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(250px,1fr))",gap:12,marginTop:18}}>
     {selected.map(c=><article key={c.id} style={{background:"white",border:"1px solid #d6e4e9",borderRadius:12,padding:16}}>
      <small>{groups.find(g=>g.id===c.sector)?.label} · {c.city}</small><h2>{c.name}</h2>
