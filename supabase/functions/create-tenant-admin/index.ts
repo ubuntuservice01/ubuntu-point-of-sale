@@ -45,7 +45,7 @@ Deno.serve(async (req)=>{
   if(moduleError){await service.from("tenants").delete().eq("id",tenantId);return reply({error:"Erro ao atribuir módulo."},500)}
  }
  const redirectBase=Deno.env.get("POS_APP_URL");
- const redirectTo=redirectBase && /^https:\/\//.test(redirectBase)?new URL("/auth/callback",redirectBase).toString():undefined;
+ const redirectTo=redirectBase && /^https:\/\//.test(redirectBase)?new URL("/empresa",redirectBase).toString():undefined;
  const {data:invitation,error:inviteError}=await service.auth.admin.inviteUserByEmail(adminEmail,{...(redirectTo?{redirectTo}:{}),data:{display_name:adminName}});
  if(inviteError||!invitation.user){
   await service.from("tenants").delete().eq("id",tenantId);
