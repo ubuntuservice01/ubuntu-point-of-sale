@@ -1,0 +1,20 @@
+.supabase-admin-auth{min-height:100dvh;display:grid;place-items:center;background:linear-gradient(135deg,#edf7f5,#f7fafc);padding:24px;color:#1c2934;font-family:inherit}
+.supabase-admin-auth-card{width:min(100%,480px);padding:36px;background:#fff;border:1px solid #dce9e7;border-radius:20px;box-shadow:0 16px 55px rgba(15,55,59,.08)}
+.supabase-admin-auth-logo{display:inline-flex;padding:14px;color:#057961;background:#e1f7ed;border-radius:14px}
+.supabase-admin-auth-label{font-size:11px;letter-spacing:.13em;font-weight:800;color:#0a8173;margin-top:17px}
+.supabase-admin-auth-card h1{font-size:clamp(23px,3vw,28px);line-height:1.2;margin:8px 0 10px}
+.supabase-admin-auth-description{font-size:14px;color:#5b6b79;line-height:1.55;margin:0 0 21px}
+.supabase-admin-auth-form{display:flex;flex-direction:column;gap:16px}
+.supabase-admin-auth-form label{display:block;font-size:13px;font-weight:650;color:#344454}
+.supabase-admin-auth-form label>span{display:block;margin-bottom:7px}
+.supabase-admin-auth-input{display:flex;align-items:center;gap:9px;border:1px solid #cfdeda;border-radius:10px;padding:0 12px;min-height:46px}
+.supabase-admin-auth-input:focus-within{border-color:#159d7f;box-shadow:0 0 0 3px #159d7f20}
+.supabase-admin-auth-input input{width:100%;min-width:0;border:0;background:transparent;outline:0;height:43px;font-size:14px;color:#172e35}
+.supabase-admin-auth-input button{border:0;background:none;color:#586d75;cursor:pointer}
+.supabase-admin-auth-submit{margin-top:4px;display:flex;align-items:center;justify-content:center;gap:9px;padding:12px 15px;border:0;border-radius:10px;background:#087f69;color:white;font-size:14px;font-weight:750;cursor:pointer}
+.supabase-admin-auth-submit:disabled{opacity:.55;cursor:not-allowed}
+.supabase-admin-auth-error{background:#fff1ee;color:#a12d27;border:1px solid #f5c7bf;border-radius:9px;font-size:13px;line-height:1.5;padding:12px}
+.supabase-admin-auth-footnote{font-size:12px;color:#667987;line-height:1.5;margin:1px 0}
+.supabase-admin-active{position:relative;z-index:20;padding:8px 15px;background:#e8f7ee;border-bottom:1px solid #c9e9d5;color:#174e3b;display:flex;justify-content:flex-end;gap:15px;align-items:center;font-size:12px}
+.supabase-admin-active button{display:inline-flex;align-items:center;gap:5px;background:transparent;color:#164d40;border:1px solid #87c9ad;border-radius:7px;padding:4px 10px;cursor:pointer}
+@media(max-width:500px){.supabase-admin-auth-card{padding:24px}.supabase-admin-active{flex-wrap:wrap;justify-content:center}}
