@@ -3,6 +3,8 @@ import {tokensFromInvite} from "../lib/supabase-admin-auth";
 import {clearCompanyTokens,companyIdentity,companyTokens,loginCompany,logoutCompany,
  refreshCompanyTokens,saveCompanyTokens,updateCompanyPassword,type CompanyMember,type CompanyTokens} from "../lib/supabase-company-auth";
 import {CompanyLive} from "./CompanyLive";
+import {CashierLive} from "./CashierLive";
+import {CompanyProductManager} from "./CompanyProductManager";
 import "../styles/super-admin-login.css";
 type Phase="loading"|"login"|"new-password"|"ready";
 export function CompanyAuthGate({tenantId}:{tenantId?:string|undefined}){
@@ -59,7 +61,9 @@ export function CompanyAuthGate({tenantId}:{tenantId?:string|undefined}){
    {members.map(m=><option key={m.id} value={m.tenant_id}>{m.display_name} · {m.tenant_id.slice(0,8)}</option>)}
   </select></label></nav>}
   {membership?.role==="company_admin"?<CompanyLive token={tokens.access_token} tenantId={selected}/>:
-   <main style={{padding:32}}><h1>Conta de operador</h1><p>O acesso ao POS real para este perfil será activado após os testes de vendas, stock e caixa.</p></main>}
+   membership?.role==="stock"?<main style={{maxWidth:1050,margin:"auto",padding:24}}><h1>Inventário da empresa</h1><CompanyProductManager token={tokens.access_token} tenantId={selected} canEdit={false}/></main>:
+   membership?<CashierLive token={tokens.access_token} tenantId={selected} membershipId={membership.id} userId={membership.user_id} role={membership.role}/>:
+   <p role="alert">Acesso não autorizado para esta empresa.</p>}
   </>;
  }
  return <main className="supabase-admin-auth"><section className="supabase-admin-auth-card">
