@@ -3,6 +3,7 @@ import {tokensFromInvite} from "../lib/supabase-admin-auth";
 import {clearCompanyTokens,companyIdentity,companyTokens,loginCompany,logoutCompany,
  refreshCompanyTokens,saveCompanyTokens,updateCompanyPassword,type CompanyMember,type CompanyTokens} from "../lib/supabase-company-auth";
 import {CompanyLive} from "./CompanyLive";
+import "../styles/super-admin-login.css";
 type Phase="loading"|"login"|"new-password"|"ready";
 export function CompanyAuthGate({tenantId}:{tenantId?:string}){
  const [phase,setPhase]=useState<Phase>("loading");
