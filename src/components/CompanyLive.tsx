@@ -1,6 +1,7 @@
 import "../styles/ubuntu-live.css";
 import {useEffect,useState,type FormEvent} from "react";
 import {companyApi,type CompanyMember} from "../lib/supabase-company-auth";
+import {CompanyProductManager} from "./CompanyProductManager";
 type Tenant={id:string;name:string;sector:string;city:string;status:string;license_expires_at:string};
 type Branch={id:string;name:string;code:string};
 type Role="manager"|"supervisor"|"cashier"|"stock";
@@ -48,7 +49,7 @@ export function CompanyLive({token,tenantId}:{token:string;tenantId:string}){
     <p>{tenant?.sector} · {tenant?.city} · {tenant?.status==="trial"?"Em teste":"Licença "+(tenant?.status??"")}</p></div>
    <button type="button" onClick={()=>setOpen(true)} disabled={!tenant}>+ Convidar funcionário</button>
   </header>
-  <p style={{background:"#fff4cf",padding:14,borderRadius:12}}>Área empresarial em integração. Os utilizadores abaixo pertencem ao Supabase; o POS, stocks e vendas ainda estão em demonstração.</p>
+  <p style={{background:"#fff4cf",padding:14,borderRadius:12}}>Área empresarial em validação: produtos, stock e vendas em dinheiro do Caixa Piloto usam o Supabase. Documentos fiscais e outros módulos continuam pendentes.</p>
   {notice&&<p role="status" style={{color:"#087b55"}}>{notice}</p>}
   {error&&<p role="alert" style={{color:"#be3232"}}>{error}</p>}
   <section style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(210px,1fr))",gap:14,margin:"20px 0"}}>
@@ -64,6 +65,7 @@ export function CompanyLive({token,tenantId}:{token:string;tenantId:string}){
      <span>{roleLabels[e.role]||e.role} · {e.active?"Activo":"Desactivado"}</span>
     </article>)}</div>}
   </section>
+  <CompanyProductManager token={token} tenantId={tenantId} canEdit={true}/>
   {open&&<div style={{position:"fixed",inset:0,display:"grid",placeItems:"center",background:"#0c203cbf",padding:16,zIndex:1000}}>
    <section role="dialog" aria-modal="true" aria-label="Convidar funcionário" style={{width:"min(480px,100%)",background:"white",padding:24,borderRadius:14}}>
     <h2>Novo funcionário</h2>{error&&<p role="alert" style={{color:"#b52b2b"}}>{error}</p>}<p>Enviaremos um convite individual, sem partilhar palavras-passe.</p>
