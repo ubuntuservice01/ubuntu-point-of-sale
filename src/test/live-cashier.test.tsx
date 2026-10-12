@@ -43,11 +43,11 @@ describe("Caixa autenticado — frontend piloto",()=>{
   fireEvent.click(screen.getByRole("button",{name:"Registar venda"}));
   await waitFor(()=>expect(requests.some(x=>x.action==="sale")).toBe(true));
   const sale=requests.find(x=>x.action==="sale")!;
-  expect(sale.tenant_id).toBe(tenant);
-  expect(sale.branch_id).toBe(branch);
-  expect(sale.session_id).toBe(session);
-  expect(sale.received_amount).toBe(200);
-  expect(sale.items).toEqual([{product_id:product,quantity:1}]);
+  expect(sale['tenant_id']).toBe(tenant);
+  expect(sale['branch_id']).toBe(branch);
+  expect(sale['session_id']).toBe(session);
+  expect(sale['received_amount']).toBe(200);
+  expect(sale['items']).toEqual([{product_id:product,quantity:1}]);
   expect(screen.getByText(/Venda registada no Supabase/)).toBeTruthy();
  });
  it("não permite ao responsável de stock abrir o caixa",async()=>{
