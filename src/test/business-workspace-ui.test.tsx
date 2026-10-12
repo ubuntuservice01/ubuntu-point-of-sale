@@ -24,7 +24,7 @@ afterEach(()=>{cleanup();localStorage.clear();sessionStorage.clear();vi.unstubAl
 
 describe("Espaço de trabalho sectorial integrado no POS",()=>{
  it("farmácia mostra somente módulos comuns e farmácia, com serviços num painel",async()=>{
-  render(createElement(UbuntuApp,{tenantId:"demo-farm"}));
+  render(<UbuntuApp tenantId="demo-farm"/>);
   await waitFor(()=>expect(screen.getByRole("heading",{name:"Farmácia Modelo"})).toBeTruthy());
   const nav=screen.getByRole("navigation",{name:"Navegação principal"});
   expect(within(nav).getByRole("button",{name:"Dispensa, lotes e validade"})).toBeTruthy();
@@ -37,7 +37,7 @@ describe("Espaço de trabalho sectorial integrado no POS",()=>{
   expect(screen.getByRole("heading",{name:"Farmácias"})).toBeTruthy();
  });
  it("talho recebe pesagem e cortes, vendas e stock, sem farmácia",async()=>{
-  render(createElement(UbuntuApp,{tenantId:"demo-talho"}));
+  render(<UbuntuApp tenantId="demo-talho"/>);
   await waitFor(()=>expect(screen.getByRole("heading",{name:"Talho Modelo"})).toBeTruthy());
   const nav=screen.getByRole("navigation",{name:"Navegação principal"});
   expect(within(nav).getByRole("button",{name:"Pesagem e cortes"})).toBeTruthy();
@@ -45,7 +45,7 @@ describe("Espaço de trabalho sectorial integrado no POS",()=>{
   expect(within(nav).queryByRole("button",{name:/Dispensa, lotes e validade/})).toBeNull();
  });
  it("uma licença suspensa bloqueia acesso a todos os serviços",async()=>{
-  render(createElement(UbuntuApp,{tenantId:"demo-loja"}));
+  render(<UbuntuApp tenantId="demo-loja"/>);
   await waitFor(()=>expect(screen.getByRole("heading",{name:"Acesso à empresa suspenso"})).toBeTruthy());
   expect(screen.queryByRole("navigation",{name:"Navegação principal"})).toBeNull();
  });
@@ -53,14 +53,14 @@ describe("Espaço de trabalho sectorial integrado no POS",()=>{
   const general=initialStore();
   general.sales=[{id:"GERAL",items:[],total:50,method:"mpesa",createdAt:"2026-10-12T09:00:00"}];
   localStorage.setItem(OFFLINE_LEGACY_KEY,JSON.stringify(general));
-  render(createElement(UbuntuApp,{tenantId:"demo-farm"}));
+  render(<UbuntuApp tenantId="demo-farm"/>);
   await waitFor(()=>expect(screen.getByRole("heading",{name:"Farmácia Modelo"})).toBeTruthy());
   const stored=localStorage.getItem(scopedOfflineKey(OFFLINE_LEGACY_KEY,"demo-farm"));
   expect(stored).toBeNull();
   expect(localStorage.getItem(OFFLINE_LEGACY_KEY)).toContain("GERAL");
  });
  it("empresa inexistente não recebe a aplicação geral como substituto",async()=>{
-  render(createElement(UbuntuApp,{tenantId:"empresa-inexistente"}));
+  render(<UbuntuApp tenantId="empresa-inexistente"/>);
   await waitFor(()=>expect(screen.getByRole("heading",{name:"Empresa não encontrada"})).toBeTruthy());
   expect(screen.queryByRole("navigation",{name:"Navegação principal"})).toBeNull();
  });
