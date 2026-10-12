@@ -69,7 +69,7 @@ export function CompanyLive({token,tenantId}:{token:string;tenantId:string}){
     <form onSubmit={invite} style={{display:"grid",gap:14}}>
      <label>Nome completo<input required minLength={2} value={name} onChange={e=>setName(e.target.value)}/></label>
      <label>Email<input required type="email" value={email} onChange={e=>setEmail(e.target.value)}/></label>
-     <label>Função<select value={role} onChange={e=>setRole(e.target.value as Role)}>{(Object.keys(roleLabels) as Role[]).filter(r=>r!=="company_admin").map(r=><option key={r} value={r}>{roleLabels[r]}</option>)}</select></label>
+     <label>Função<select value={role} onChange={e=>setRole(e.target.value as Role)}>{(["manager","supervisor","cashier","stock"] as Role[]).map(r=><option key={r} value={r}>{roleLabels[r]}</option>)}</select></label>
      <label>Filial<select required value={branch} onChange={e=>setBranch(e.target.value)}>{branches.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}</select></label>
      <div style={{display:"flex",justifyContent:"flex-end",gap:12}}>
       <button type="button" disabled={busy} onClick={()=>setOpen(false)}>Cancelar</button>
