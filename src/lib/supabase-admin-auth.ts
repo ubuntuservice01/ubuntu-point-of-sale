@@ -7,8 +7,8 @@ export type AdminIdentity={id:string;email:string};
 export type LoginResult={identity:AdminIdentity;tokens:Tokens};
 const env=import.meta.env;
 export function supabaseAdminConfig(){
- const url=(env.VITE_SUPABASE_URL||"").replace(/\/$/,"");
- const key=env.VITE_SUPABASE_PUBLISHABLE_KEY||env.VITE_SUPABASE_ANON_KEY||"";
+ const url=(env['VITE_SUPABASE_URL']||"").replace(/\/$/,"");
+ const key=env['VITE_SUPABASE_PUBLISHABLE_KEY']||env['VITE_SUPABASE_ANON_KEY']||"";
  return url.startsWith("https://")&&Boolean(key)?{url,key}:null;
 }
 function getConfig(){
@@ -24,7 +24,7 @@ async function request<T>(path:string,init:RequestInit={},accessToken?:string):P
  });
  let body:Record<string,unknown>={};
  try{body=await res.json()}catch{}
- if(!res.ok)throw new Error(typeof body.msg==="string"?body.msg:typeof body.message==="string"?body.message:typeof body.error_description==="string"?body.error_description:"Não foi possível efectuar esta operação.");
+ if(!res.ok)throw new Error(typeof body['msg']==="string"?body['msg']:typeof body['message']==="string"?body['message']:typeof body['error_description']==="string"?body['error_description']:"Não foi possível efectuar esta operação.");
  return body as T;
 }
 export function savedTokens():Tokens|null{
