@@ -132,7 +132,7 @@ describe("Catálogo de serviços visíveis dentro de cada módulo comercial",()=
   for(const item of ["products","purchases","operators","reports","finance","settings"] as const)expect(list).not.toContain(item);
  });
  it("Talho, Restaurante, Bar, Padaria e Grossistas mostram apenas o próprio sector e as ferramentas autorizadas",()=>{
-  const specs=[["Talho","talho","talhos"],["Restaurante","restaurante","restaurantes"],["Bar","bar","bares"],
+  const specs=[["Talho","talho","talho"],["Restaurante","restaurante","restaurante"],["Bar","bar","bar"],
    ["Padaria","padaria","producao"],["Grossista","grossista","grossistas"]] as const;
   for(const [sector,kind,special] of specs){
    const source={...admin,tenants:[tenant(kind,sector,mandatorySectorAddon(sector))]};
